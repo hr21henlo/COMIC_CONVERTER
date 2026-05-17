@@ -102,14 +102,6 @@ generateBtn.addEventListener('click', async () => {
 
 async function generateStoryboard(text, style) {
     console.log("📝 Generating storyboard...");
-    let model;
-    try {
-        model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-    } catch (e) {
-        console.warn("⚠️ Flash model init failed, falling back to Pro...");
-        model = genAI.getGenerativeModel({ model: "gemini-pro" });
-    }
-    
     // Default to 5 panels for the generated layouts
     const panelCount = 5;
 
@@ -135,11 +127,11 @@ async function generateStoryboard(text, style) {
     try {
         let result;
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
             result = await model.generateContent(prompt);
         } catch (flashError) {
-            console.warn("⚠️ Gemini 2.5 Flash failed, trying Gemini 2.5 Pro fallback...", flashError);
-            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+            console.warn("⚠️ Gemini 1.5 Flash failed, trying Gemini 1.5 Pro fallback...", flashError);
+            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
             result = await fallbackModel.generateContent(prompt);
         }
 
