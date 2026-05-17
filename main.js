@@ -126,13 +126,30 @@ async function generateStoryboard(text, style) {
 
     try {
         let result;
-        try {
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            result = await model.generateContent(prompt);
-        } catch (flashError) {
-            console.warn("⚠️ Gemini 1.5 Flash failed, trying Gemini 1.5 Pro fallback...", flashError);
-            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
-            result = await fallbackModel.generateContent(prompt);
+        const modelsToTry = [
+            "gemini-1.5-flash",
+            "gemini-1.5-flash-latest",
+            "gemini-pro"
+        ];
+        
+        let lastError = null;
+        for (const modelName of modelsToTry) {
+            try {
+                console.log(`🤖 Trying model: ${modelName}...`);
+                const model = genAI.getGenerativeModel({ model: modelName });
+                result = await model.generateContent(prompt);
+                if (result) {
+                    console.log(`✅ Successfully generated using model: ${modelName}`);
+                    break;
+                }
+            } catch (err) {
+                console.warn(`⚠️ Model ${modelName} failed:`, err);
+                lastError = err;
+            }
+        }
+        
+        if (!result) {
+            throw lastError || new Error("All fallback Gemini models failed to generate storyboard.");
         }
 
         const response = await result.response;
