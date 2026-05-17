@@ -127,9 +127,9 @@ async function generateStoryboard(text, style) {
     try {
         let result;
         const modelsToTry = [
-            "gemini-1.5-flash",
-            "gemini-1.5-flash-latest",
-            "gemini-pro"
+            "gemini-2.5-flash",
+            "gemini-3-flash",
+            "gemini-2.5-flash-lite"
         ];
         
         let lastError = null;
