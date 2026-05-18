@@ -42,9 +42,13 @@ generateBtn.addEventListener('click', async () => {
         return;
     }
 
-    if (GEMINI_API_KEY.includes('ADD_YOUR') || NVIDIA_API_KEY.includes('ADD_YOUR')) {
-        alert("Please set your API keys in the .env file first!");
-        return;
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocalhost) {
+        if (!GEMINI_API_KEY || !NVIDIA_API_KEY || GEMINI_API_KEY.includes('ADD_YOUR') || NVIDIA_API_KEY.includes('ADD_YOUR')) {
+            alert("Local development detected: Please set your API keys in the local .env file first!");
+            return;
+        }
     }
 
     // Start Generation
@@ -102,6 +106,24 @@ generateBtn.addEventListener('click', async () => {
 
 async function generateStoryboard(text, style) {
     console.log("📝 Generating storyboard...");
+    
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // On production (Netlify), use the secure backend serverless function!
+    if (!isLocalhost || !GEMINI_API_KEY || GEMINI_API_KEY.includes('ADD_YOUR')) {
+        console.log("🌐 Calling secure Netlify function for storyboard...");
+        const response = await fetch("/.netlify/functions/generateStoryboard", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, style })
+        });
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP ${response.status} failed to generate storyboard`);
+        }
+        return await response.json();
+    }
+    
     // Default to 5 panels for the generated layouts
     const panelCount = 5;
 
@@ -167,6 +189,24 @@ async function generateStoryboard(text, style) {
 }
 
 async function generateImage(prompt, style, retryCount = 0) {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // On production (Netlify), use the secure backend serverless function!
+    if (!isLocalhost || !NVIDIA_API_KEY || NVIDIA_API_KEY.includes('ADD_YOUR')) {
+        console.log("🌐 Calling secure Netlify function for image generation...");
+        const response = await fetch("/.netlify/functions/generateImage", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt, style })
+        });
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP ${response.status} failed to generate image`);
+        }
+        const data = await response.json();
+        return data.image;
+    }
+
     // Enhance the prompt with the explicit style to force Nvidia FLUX to respect it
     let enhancedPrompt = prompt;
     if (style && style !== 'custom characters') {
