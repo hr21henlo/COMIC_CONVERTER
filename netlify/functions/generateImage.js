@@ -34,7 +34,7 @@ exports.handler = async (event, context) => {
 
         console.log(`🎨 Backend generating image for style: ${style}`);
         
-        const nvidiaUrl = "https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.1-dev";
+        const nvidiaUrl = "https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b";
 
         const response = await fetch(nvidiaUrl, {
             method: "POST",

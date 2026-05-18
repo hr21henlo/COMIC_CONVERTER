@@ -215,8 +215,8 @@ async function generateImage(prompt, style, retryCount = 0) {
     
     console.log(`🎨 Generating image for prompt: ${enhancedPrompt.substring(0, 80)}...`);
     
-    // NVIDIA NIM API for FLUX.1 (Routed through Vite Proxy to fix CORS)
-    const API_URL = "/api/nvidia/v1/genai/black-forest-labs/flux.1-dev"; 
+    // NVIDIA NIM API for FLUX.2 (Routed through Vite Proxy to fix CORS)
+    const API_URL = "/api/nvidia/v1/genai/black-forest-labs/flux.2-klein-4b"; 
     
     try {
         const response = await fetch(API_URL, {
