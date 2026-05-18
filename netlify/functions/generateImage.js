@@ -47,8 +47,8 @@ exports.handler = async (event, context) => {
                 "prompt": enhancedPrompt,
                 "height": 1024,
                 "width": 1024,
-                "cfg_scale": 5,
-                "steps": 30
+                "cfg_scale": 1,
+                "steps": 4
             }),
         });
 

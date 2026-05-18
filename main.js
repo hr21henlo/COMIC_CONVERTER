@@ -230,8 +230,8 @@ async function generateImage(prompt, style, retryCount = 0) {
                 "prompt": enhancedPrompt,
                 "height": 1024,
                 "width": 1024,
-                "cfg_scale": 5,
-                "steps": 30
+                "cfg_scale": 1,
+                "steps": 4
             }),
         });
 
