@@ -26,13 +26,10 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Enhance the prompt with the explicit style
-        let enhancedPrompt = prompt;
-        if (style && style !== 'custom characters') {
-            enhancedPrompt = `A scene entirely in ${style} style. ${prompt}. Everything including background, environment, and characters must strictly be ${style} style. No realistic elements.`;
-        }
+        const enhancedPrompt = buildNvidiaPrompt(prompt, style);
 
         console.log(`🎨 Backend generating image for style: ${style}`);
+        console.log(`🧾 Backend prompt length: ${enhancedPrompt.length}`);
         
         const nvidiaUrl = "https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b";
 
@@ -88,3 +85,43 @@ exports.handler = async (event, context) => {
         };
     }
 };
+
+const NVIDIA_PROMPT_LIMIT = 760;
+
+function normalizeText(text = '') {
+    return String(text).replace(/\s+/g, ' ').trim();
+}
+
+function shortenText(text, limit) {
+    const clean = normalizeText(text);
+    if (clean.length <= limit) return clean;
+
+    const slice = clean.slice(0, limit);
+    const breakPoints = [
+        slice.lastIndexOf('. '),
+        slice.lastIndexOf('! '),
+        slice.lastIndexOf('? '),
+        slice.lastIndexOf('; '),
+        slice.lastIndexOf(', '),
+        slice.lastIndexOf(' ')
+    ].filter((index) => index > 80);
+
+    const cutIndex = breakPoints.length ? Math.max(...breakPoints) : limit;
+    return clean.slice(0, cutIndex).trimEnd() + '.';
+}
+
+function stripRepeatedStyleWrapper(prompt) {
+    let text = normalizeText(prompt);
+    text = text.replace(/^A scene entirely in .*?style\.\s*/i, '');
+    text = text.replace(/\s*Everything including background, environment, and characters must strictly be .*?style\.\s*No realistic elements\.?\s*$/i, '');
+    return text;
+}
+
+function buildNvidiaPrompt(prompt, style) {
+    const basePrompt = stripRepeatedStyleWrapper(prompt);
+    const stylePrefix = style && style !== 'custom characters' ? `Style: ${normalizeText(style)}. ` : '';
+    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized.' : '';
+    const remaining = Math.max(120, NVIDIA_PROMPT_LIMIT - stylePrefix.length - styleSuffix.length);
+    const compactPrompt = shortenText(basePrompt, remaining);
+    return `${stylePrefix}${compactPrompt}${styleSuffix}`.trim();
+}

@@ -211,13 +211,10 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
         return data.image;
     }
 
-    // Enhance the prompt with the explicit style to force Nvidia FLUX to respect it
-    let enhancedPrompt = prompt;
-    if (style && style !== 'custom characters') {
-        enhancedPrompt = `A scene entirely in ${style} style. ${prompt}. Everything including background, environment, and characters must strictly be ${style} style. No realistic elements.`;
-    }
+    const enhancedPrompt = buildNvidiaPrompt(prompt, style);
     
     console.log(`🎨 Generating image for prompt: ${enhancedPrompt.substring(0, 80)}...`);
+    console.log(`🧾 Prompt length: ${enhancedPrompt.length}`);
     
     // NVIDIA NIM API for FLUX.2 (Routed through Vite Proxy to fix CORS)
     const API_URL = "/api/nvidia/v1/genai/black-forest-labs/flux.2-klein-4b"; 
@@ -249,7 +246,7 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
                 await new Promise(resolve => setTimeout(resolve, 3000));
                 // Simplify/anonymize the prompt on retry using caption if available
                 const simplifiedPrompt = anonymizePrompt(prompt, style, caption);
-                return generateImage(simplifiedPrompt, style, caption, retryCount + 1);
+                return generateImage(buildNvidiaPrompt(simplifiedPrompt, style), style, caption, retryCount + 1);
             }
             
             const errorMsg = typeof errorData === 'object' ? JSON.stringify(errorData) : errorData.detail;
@@ -281,7 +278,7 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
             await new Promise(resolve => setTimeout(resolve, 3000));
             // Simplify/anonymize the prompt on retry using caption if available
             const simplifiedPrompt = anonymizePrompt(prompt, style, caption);
-            return generateImage(simplifiedPrompt, style, caption, retryCount + 1);
+            return generateImage(buildNvidiaPrompt(simplifiedPrompt, style), style, caption, retryCount + 1);
         }
         console.error("❌ Image Generation Error:", error);
         throw error;
@@ -488,6 +485,46 @@ function anonymizePrompt(prompt, style, caption = '') {
         simplifiedPrompt = `A stunning scene in ${style || 'comic'} style. ${prompt.substring(0, 100)}...`;
     }
     return simplifiedPrompt;
+}
+
+const NVIDIA_PROMPT_LIMIT = 760;
+
+function normalizePromptText(text = '') {
+    return String(text).replace(/\s+/g, ' ').trim();
+}
+
+function stripRepeatedStyleWrapper(prompt) {
+    let text = normalizePromptText(prompt);
+    text = text.replace(/^A scene entirely in .*?style\.\s*/i, '');
+    text = text.replace(/\s*Everything including background, environment, and characters must strictly be .*?style\.\s*No realistic elements\.?\s*$/i, '');
+    return text;
+}
+
+function shortenPromptText(text, limit) {
+    const clean = normalizePromptText(text);
+    if (clean.length <= limit) return clean;
+
+    const slice = clean.slice(0, limit);
+    const breakPoints = [
+        slice.lastIndexOf('. '),
+        slice.lastIndexOf('! '),
+        slice.lastIndexOf('? '),
+        slice.lastIndexOf('; '),
+        slice.lastIndexOf(', '),
+        slice.lastIndexOf(' ')
+    ].filter((index) => index > 80);
+
+    const cutIndex = breakPoints.length ? Math.max(...breakPoints) : limit;
+    return clean.slice(0, cutIndex).trimEnd() + '.';
+}
+
+function buildNvidiaPrompt(prompt, style) {
+    const basePrompt = stripRepeatedStyleWrapper(prompt);
+    const stylePrefix = style && style !== 'custom characters' ? `Style: ${normalizePromptText(style)}. ` : '';
+    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized.' : '';
+    const remaining = Math.max(120, NVIDIA_PROMPT_LIMIT - stylePrefix.length - styleSuffix.length);
+    const compactPrompt = shortenPromptText(basePrompt, remaining);
+    return `${stylePrefix}${compactPrompt}${styleSuffix}`.trim();
 }
 
 // Initialize the entire News Hub UI & Logic
