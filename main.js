@@ -8,6 +8,7 @@ console.log("🎨 ComicGen initialized...");
 // API Keys from .env
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const NVIDIA_API_KEY = import.meta.env.VITE_NVIDIA_API_KEY;
+const SARVAM_API_KEY = import.meta.env.VITE_SARVAM_API_KEY;
 
 if (!GEMINI_API_KEY || GEMINI_API_KEY.includes('ADD_YOUR')) {
     console.warn("⚠️ Gemini API Key is missing or default.");
@@ -21,17 +22,33 @@ if (!NVIDIA_API_KEY || NVIDIA_API_KEY.includes('ADD_YOUR')) {
     console.log("✅ Nvidia API Key detected (starts with: " + NVIDIA_API_KEY.substring(0, 6) + "...)");
 }
 
+if (!SARVAM_API_KEY || SARVAM_API_KEY.includes('ADD_YOUR')) {
+    console.warn("⚠️ Sarvam API Key is missing or default.");
+} else {
+    console.log("✅ Sarvam API Key detected.");
+}
+
 // Elements
 const generateBtn = document.getElementById('generateBtn');
 const articleInput = document.getElementById('articleInput');
 const resultSection = document.getElementById('resultSection');
-const comicGrid = document.getElementById('comicGrid');
 const statusText = document.getElementById('statusText');
 const mainLoader = document.getElementById('mainLoader');
 const demoBtn = document.getElementById('demoBtn');
 
-// Available Layouts
-const LAYOUTS = ['layout-hero-top', 'layout-action', 'layout-magazine'];
+const newsCard = document.getElementById('newsCard');
+const newsCardHeadline = document.getElementById('newsCardHeadline');
+const newsCardImgContainer = document.getElementById('newsCardImgContainer');
+const newsCardBrief1 = document.getElementById('newsCardBrief1');
+const newsCardBrief2 = document.getElementById('newsCardBrief2');
+const downloadBtn = document.getElementById('downloadBtn');
+const shareBtn = document.getElementById('shareBtn');
+const finalActions = document.querySelector('.final-actions');
+
+// State
+let generatedImageUrl = null;
+let originalCardTexts = null;
+let translationCache = {};
 
 // Initialize Gemini
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
@@ -58,44 +75,39 @@ generateBtn.addEventListener('click', async () => {
 
     try {
         const characterStyle = document.querySelector('input[name="characterStyle"]:checked').value;
-        // Step 1: Generate Storyboard with Gemini
-        updateStatus("Storyboarder: Analyzing your article...", 10);
-        const storyboard = await generateStoryboard(article, characterStyle);
+        // Step 1: Generate News Card script with Gemini
+        updateStatus("Editor: Slicing article into a dramatic comic layout...", 20);
+        const cardData = await generateNewsCard(article, characterStyle);
         
-        if (!storyboard || !storyboard.panels) {
-            throw new Error("Failed to generate storyboard. Please try again.");
+        if (!cardData || !cardData.headline || !cardData.brief1 || !cardData.brief2 || !cardData.imagePrompt) {
+            throw new Error("Failed to generate news card data. Please try again.");
         }
 
-        updateStatus(`Artist: Sketching ${storyboard.panels.length} panels...`, 20);
+        updateStatus("Artist: Prepping card canvas...", 40);
+        renderPlaceholderCard(cardData);
 
-        // Step 2: Generate Images with Flux (Nvidia API)
-        const totalPanels = storyboard.panels.length;
-        let completed = 0;
+        // Cache original text for translations
+        originalCardTexts = {
+            headline: cardData.headline,
+            brief1: cardData.brief1,
+            brief2: cardData.brief2
+        };
+        translationCache = {};
+        const langSelect = document.getElementById('cardLanguageSelect');
+        if (langSelect) langSelect.value = 'en';
 
-        // Pick random layout and render placeholders
-        const layoutClass = LAYOUTS[Math.floor(Math.random() * LAYOUTS.length)];
-        renderPlaceholders(storyboard.panels, layoutClass);
-
-        for (let index = 0; index < storyboard.panels.length; index++) {
-            const panel = storyboard.panels[index];
-            try {
-                // Add a solid 2000ms (2 second) delay to be gentle on the Nvidia API rate limiter
-                if (index > 0) await new Promise(resolve => setTimeout(resolve, 2000));
-
-                const imageUrl = await generateImage(panel.description, characterStyle, panel.caption);
-                completed++;
-                const progress = 20 + (completed / totalPanels) * 80;
-                updateStatus(`Artist: Finalizing panel ${completed}/${totalPanels}...`, progress);
-                
-                // Update the specific panel image
-                updatePanelImage(index, imageUrl);
-                panel.imageUrl = imageUrl;
-            } catch (err) {
-                console.error(`Error generating panel ${index + 1}:`, err);
-                updatePanelError(index, err.message);
-                panel.imageUrl = null;
-            }
+        // Step 2: Generate single image with Flux (Nvidia API)
+        try {
+            updateStatus("Artist: Sketching the single visual masterpiece...", 65);
+            const imageUrl = await generateImage(cardData.imagePrompt, characterStyle, cardData.headline);
+            
+            updateStatus("Artist: Finalizing card details...", 90);
+            updateCardImage(imageUrl);
+        } catch (err) {
+            console.error("Error generating card image:", err);
+            updateCardError(err.message);
         }
+
         updateStatus("Masterpiece Complete!", 100);
         generateBtn.dataset.success = "true";
 
@@ -107,43 +119,43 @@ generateBtn.addEventListener('click', async () => {
     }
 });
 
-async function generateStoryboard(text, style) {
-    console.log("📝 Generating storyboard...");
+async function generateNewsCard(text, style) {
+    console.log("📝 Generating news card layout...");
     
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
     // On production (Netlify), use the secure backend serverless function!
     if (!isLocalhost || !GEMINI_API_KEY || GEMINI_API_KEY.includes('ADD_YOUR')) {
-        console.log("🌐 Calling secure Netlify function for storyboard...");
-        const response = await fetch("/.netlify/functions/generateStoryboard", {
+        console.log("🌐 Calling secure Netlify function for news card...");
+        const response = await fetch("/.netlify/functions/generateNewsCard", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text, style })
         });
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
-            throw new Error(errData.error || `HTTP ${response.status} failed to generate storyboard`);
+            throw new Error(errData.error || `HTTP ${response.status} failed to generate news card`);
         }
         return await response.json();
     }
     
-    // Default to 5 panels for the generated layouts
-    const panelCount = 5;
-
     const prompt = `
-        Convert the following article into a ${panelCount}-panel comic storyboard.
-        For each panel, provide:
-        1. "description": A highly descriptive image prompt for an AI image generator. 
+        You are an elite comic-book editor. Convert the following article into a 1-panel visual News Card.
+        Generate the following four fields in JSON format:
+        1. "headline": A highly dramatic, punchy comic-book style headline for the top banner of the card.
+        2. "brief1": A dramatic narrative setup of the news story (exactly 1-2 sentences, approximately 20-30 words) styled like a classic comic narrator's text box.
+        3. "brief2": A dramatic continuation or impact statement of the news story (exactly 1-2 sentences, approximately 20-30 words) styled like a second comic narrator's text box, providing more details.
+        4. "imagePrompt": A detailed, highly descriptive image prompt for an AI image generator representing the core action of the article.
            CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
            Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
-           CRITICAL CELEBRITY RULE: Do NOT use real-world celebrity names, specific athletes, or copyrighted public figures in the descriptions, as this triggers the image generator's safety/censorship filters. Instead, describe them generically (e.g., instead of "Cristiano Ronaldo", use "a world-famous athletic Portuguese soccer player wearing a custom kit with number 7"; instead of "LeBron James", use "a towering athletic basketball star in a purple and gold jersey").
-        2. "caption": A short, punchy caption for the bottom of the panel.
+           CRITICAL CELEBRITY RULE: Do NOT use real-world celebrity names, specific athletes, or copyrighted public figures in the descriptions, as this triggers the image generator's safety/censorship filters. Instead, describe them generically (e.g., instead of "Cristiano Ronaldo", use "a world-famous athletic Portuguese soccer player wearing a custom kit with number 7"; instead of "LeBron James", use "a towering athletic basketball star in a purple and gold jersey"; instead of "Elon Musk", use "a wealthy tech entrepreneur").
 
         Output MUST be in valid JSON format like this:
         {
-            "panels": [
-                { "description": "...", "caption": "..." }
-            ]
+            "headline": "...",
+            "brief1": "...",
+            "brief2": "...",
+            "imagePrompt": "..."
         }
 
         ARTICLE:
@@ -285,131 +297,90 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
     }
 }
 
-// Geometry Coordinates Map for Slanted & Circular Comic Panel shapes
-const PANEL_SHAPES = {
-    'layout-hero-top': [
-        '0,0 100,0 100,96 0,100',       // Panel 0 (span 6)
-        '0,4 100,0 97,100 0,100',       // Panel 1 (span 4)
-        '6,0 100,4 100,100 0,100',      // Panel 2 (span 2)
-        '0,0 94,0 100,100 0,100',       // Panel 3 (span 2)
-        '3,0 100,0 100,100 0,100'       // Panel 4 (span 4)
-    ],
-    'layout-action': [
-        '0,0 94,0 100,96 0,100',        // Panel 0 (span 2)
-        '3,0 100,0 100,100 0,96',       // Panel 1 (span 4)
-        '0,4 100,0 100,96 0,100',       // Panel 2 (span 6)
-        '0,0 97,4 100,100 0,100',       // Panel 3 (span 4)
-        '6,4 100,0 100,100 0,100'       // Panel 4 (span 2)
-    ],
-    'layout-magazine': [
-        '0,0 100,0 97,96 0,100',        // Panel 0 (span 4)
-        '6,0 100,0 100,100 0,96',       // Panel 1 (span 2)
-        '0,4 94,0 100,96 0,100',        // Panel 2 (span 2)
-        '3,0 100,4 100,100 0,96',       // Panel 3 (span 4)
-        '0,4 100,0 100,100 0,100'       // Panel 4 (span 6)
-    ]
-};
-
-function getBorderSVG(layoutClass, index) {
-    const shapes = PANEL_SHAPES[layoutClass];
-    if (shapes && shapes[index]) {
-        const shape = shapes[index];
-        return `
-            <svg class="panel-border-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-                <polygon points="${shape}" fill="none" stroke="black" stroke-width="8" vector-effect="non-scaling-stroke"></polygon>
-            </svg>
-        `;
-    }
-    return `
-        <svg class="panel-border-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-            <polygon points="0,0 100,0 100,100 0,100" fill="none" stroke="black" stroke-width="8" vector-effect="non-scaling-stroke"></polygon>
-        </svg>
-    `;
-}
-
-function renderPlaceholders(panels, layoutClass = '') {
-    // Reset classes and apply the new layout
-    comicGrid.className = 'comic-grid ' + layoutClass;
-    comicGrid.innerHTML = '';
+function renderPlaceholderCard(cardData) {
+    newsCardHeadline.innerText = cardData.headline.toUpperCase();
+    newsCardBrief1.innerText = cardData.brief1;
+    newsCardBrief2.innerText = cardData.brief2;
     
-    panels.forEach((panel, index) => {
-        const panelEl = document.createElement('div');
-        panelEl.className = `comic-panel loading-state panel-idx-${index}`;
-        panelEl.id = `panel-${index}`;
-        
-        const borderSVG = getBorderSVG(layoutClass, index);
-        panelEl.innerHTML = `
-            <div class="skeleton-img"></div>
-            <div class="panel-caption">${panel.caption}</div>
-            ${borderSVG}
-        `;
-        comicGrid.appendChild(panelEl);
-    });
+    newsCardImgContainer.className = 'news-card-img-container loading-state';
+    newsCardImgContainer.innerHTML = '<div class="skeleton-img"></div>';
+    
+    finalActions.style.display = 'none';
 }
 
 // Demo Mode Logic
 demoBtn.addEventListener('click', async () => {
-    // Default to 5 panels for demo
-    const panelCount = 5;
     toggleLoading(true);
     resetUI();
     
     updateStatus("Demo Mode: Generating Layout...", 50);
     
-    // Create fake panels
-    const fakePanels = Array.from({ length: panelCount }).map((_, i) => ({
-        caption: `Demo Panel ${i + 1} - Layout Test`
-    }));
+    const fakeCard = {
+        headline: "SPACEX STARSHIP LANDS TRIUMPHANTLY ON THE MARS REGOLITH!",
+        brief1: "IN A HISTORIC FEAT THAT DEFIES IMAGINATION, ELON MUSK'S GIGANTIC STARSHIP HAS TOUCHED DOWN ON THE RED PLANET'S DUSTY REGOLITH!",
+        brief2: "MILLIONS HELD THEIR BREATH AS THE METAL TITAN BEAMED BACK SENSATIONAL PICTURES OF A NEW DAWN FOR INTERPLANETARY HUMANITY!",
+        imagePrompt: "SpaceX Starship landed on Mars"
+    };
 
-    const layoutClass = LAYOUTS[Math.floor(Math.random() * LAYOUTS.length)];
-    renderPlaceholders(fakePanels, layoutClass);
+    renderPlaceholderCard(fakeCard);
+
+    // Cache original text for translations
+    originalCardTexts = {
+        headline: fakeCard.headline,
+        brief1: fakeCard.brief1,
+        brief2: fakeCard.brief2
+    };
+    translationCache = {};
+    const langSelect = document.getElementById('cardLanguageSelect');
+    if (langSelect) langSelect.value = 'en';
 
     // Simulate image loading
-    const totalPanels = fakePanels.length;
-    for (let i = 0; i < totalPanels; i++) {
-        await new Promise(resolve => setTimeout(resolve, 500)); // 0.5s per image
-        const progress = 50 + ((i + 1) / totalPanels) * 50;
-        updateStatus(`Demo Mode: Finalizing panel ${i + 1}/${totalPanels}...`, progress);
-        
-        // Use a random placeholder image
-        updatePanelImage(i, `https://picsum.photos/seed/${Math.random()}/800/800`);
-    }
+    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay
+    
+    updateStatus("Demo Mode: Finalizing design...", 90);
+    const demoImgUrl = `https://picsum.photos/seed/${Math.random()}/1024/1024`;
+    updateCardImage(demoImgUrl);
 
     updateStatus("Demo Layout Complete!", 100);
     toggleLoading(false);
 });
 
-function updatePanelImage(index, imageUrl) {
-    const panelEl = document.getElementById(`panel-${index}`);
-    const skeleton = panelEl.querySelector('.skeleton-img');
+function updateCardImage(imageUrl) {
+    const skeleton = newsCardImgContainer.querySelector('.skeleton-img');
     const imgSrc = imageUrl.startsWith('http') ? imageUrl : `data:image/png;base64,${imageUrl}`;
     
+    // Cache for download action
+    generatedImageUrl = imgSrc;
+
     const img = document.createElement('img');
     img.src = imgSrc;
     img.onload = () => {
-        panelEl.classList.remove('loading-state');
+        newsCardImgContainer.classList.remove('loading-state');
         if (skeleton) skeleton.remove();
-        panelEl.insertBefore(img, panelEl.firstChild);
+        newsCardImgContainer.innerHTML = '';
+        newsCardImgContainer.appendChild(img);
         
-        // Springy comic panel entrance
+        // Show download/share buttons
+        finalActions.style.display = 'flex';
+
+        // Springy entrance for the card image
         gsap.fromTo(img, 
-            { scale: 1.25, opacity: 0, rotation: index % 2 === 0 ? 3 : -3 },
-            { scale: 1, opacity: 1, rotation: 0, duration: 0.65, ease: "back.out(2)" }
+            { scale: 1.15, opacity: 0, rotation: -2 },
+            { scale: 1, opacity: 1, rotation: 0, duration: 0.7, ease: "back.out(2)" }
         );
     };
 }
 
-function updatePanelError(index, errorMessage = "") {
-    const panelEl = document.getElementById(`panel-${index}`);
-    panelEl.classList.remove('loading-state');
-    panelEl.classList.add('error-state');
+function updateCardError(errorMessage = "") {
+    newsCardImgContainer.classList.remove('loading-state');
+    newsCardImgContainer.classList.add('error-state');
     
-    let displayMessage = "⚠️ Failed to generate";
+    let displayMessage = "⚠️ Failed to generate image";
     if (errorMessage && errorMessage.toLowerCase().includes("policy violation")) {
         displayMessage = "⚠️ Content policy violation";
     }
     
-    panelEl.querySelector('.skeleton-img').innerHTML = `<span>${displayMessage}</span>`;
+    newsCardImgContainer.innerHTML = `<div class="error-text" style="display: flex; align-items: center; justify-content: center; height: 100%; font-family: 'Bangers', cursive; font-size: 1.4rem; color: var(--c-red);">${displayMessage}</div>`;
 }
 
 function toggleLoading(isLoading) {
@@ -441,8 +412,52 @@ function updateStatus(text, progress) {
 }
 
 function resetUI() {
-    comicGrid.innerHTML = '';
+    newsCardHeadline.innerText = "BREWING HEADLINE...";
+    newsCardBrief1.innerText = "BREWING SHORT STORY PART 1...";
+    newsCardBrief2.innerText = "BREWING SHORT STORY PART 2...";
+    newsCardImgContainer.innerHTML = '';
+    newsCardImgContainer.className = 'news-card-img-container';
+    finalActions.style.display = 'none';
+    generatedImageUrl = null;
 }
+
+// Download Button
+downloadBtn.addEventListener('click', () => {
+    if (!generatedImageUrl) return;
+    const link = document.createElement('a');
+    link.href = generatedImageUrl;
+    link.download = `ComicGen_NewsCard_${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+});
+
+// Share Button
+shareBtn.addEventListener('click', async () => {
+    if (!generatedImageUrl) return;
+    try {
+        if (navigator.share) {
+            await navigator.share({
+                title: 'My ComicGen News Card',
+                text: 'Check out this awesome AI generated news card!',
+                url: generatedImageUrl.startsWith('http') ? generatedImageUrl : window.location.href
+            });
+        } else {
+            const dummy = document.createElement('input');
+            document.body.appendChild(dummy);
+            dummy.value = window.location.href;
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            alert("Application link copied to clipboard! 📋");
+        }
+    } catch (err) {
+        console.error("Share failed:", err);
+    }
+});
+
+
+
 
 function anonymizePrompt(prompt, style, caption = '') {
     let simplifiedPrompt = prompt;
@@ -1430,6 +1445,123 @@ function setupAudioSFX() {
 }
 
 // Initialize SFX Engine
-setupAudioSFX();
+// setupAudioSFX();
+
+// --- SARVAM TRANSLATION HELPERS & LISTENER ---
+
+async function translateText(text, targetLanguage) {
+    if (!text || text.trim() === "") return "";
+    
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
+    // On production (Netlify), use the secure backend serverless function!
+    if (!isLocalhost || !SARVAM_API_KEY || SARVAM_API_KEY.includes('ADD_YOUR')) {
+        console.log(`🌐 Calling secure Netlify function for translating to ${targetLanguage}...`);
+        const response = await fetch("/.netlify/functions/translate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, targetLanguage })
+        });
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `HTTP ${response.status} failed to translate`);
+        }
+        const data = await response.json();
+        return data.translatedText;
+    }
+    
+    // Local Fallback: Direct API call via Vite proxy to bypass CORS
+    console.log(`🤖 Call to Sarvam AI via Vite proxy for translating to ${targetLanguage}...`);
+    const response = await fetch("/api/sarvam/translate", {
+        method: "POST",
+        headers: {
+            "api-subscription-key": SARVAM_API_KEY,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            input: text,
+            source_language_code: "en-IN",
+            target_language_code: targetLanguage,
+            mode: "formal"
+        })
+    });
+    
+    if (!response.ok) {
+        const errorDetail = await response.text();
+        throw new Error(`Sarvam API HTTP ${response.status}: ${errorDetail}`);
+    }
+    
+    const data = await response.json();
+    return data.translated_text;
+}
+
+// Wire up language translation selector
+const cardLanguageSelect = document.getElementById('cardLanguageSelect');
+if (cardLanguageSelect) {
+    cardLanguageSelect.addEventListener('change', async (e) => {
+        const targetLang = e.target.value;
+        if (!originalCardTexts) return;
+        
+        // If English is selected, restore instantly
+        if (targetLang === 'en') {
+            newsCardHeadline.innerText = originalCardTexts.headline.toUpperCase();
+            newsCardBrief1.innerText = originalCardTexts.brief1;
+            newsCardBrief2.innerText = originalCardTexts.brief2;
+            return;
+        }
+        
+        // Check cache first
+        if (translationCache[targetLang]) {
+            console.log(`⚡ Translation cache hit for language: ${targetLang}`);
+            const cached = translationCache[targetLang];
+            newsCardHeadline.innerText = cached.headline.toUpperCase();
+            newsCardBrief1.innerText = cached.brief1;
+            newsCardBrief2.innerText = cached.brief2;
+            return;
+        }
+        
+        // Apply visual brewing states to text elements
+        const origHeadlineHtml = newsCardHeadline.innerHTML;
+        const origBrief1Html = newsCardBrief1.innerHTML;
+        const origBrief2Html = newsCardBrief2.innerHTML;
+        
+        newsCardHeadline.innerText = "TRANSLATING...";
+        newsCardBrief1.innerText = "TRANSLATING...";
+        newsCardBrief2.innerText = "TRANSLATING...";
+        
+        try {
+            // Translate all three in parallel
+            const [transHeadline, transBrief1, transBrief2] = await Promise.all([
+                translateText(originalCardTexts.headline, targetLang),
+                translateText(originalCardTexts.brief1, targetLang),
+                translateText(originalCardTexts.brief2, targetLang)
+            ]);
+            
+            // Render results
+            newsCardHeadline.innerText = transHeadline.toUpperCase();
+            newsCardBrief1.innerText = transBrief1;
+            newsCardBrief2.innerText = transBrief2;
+            
+            // Store in cache
+            translationCache[targetLang] = {
+                headline: transHeadline,
+                brief1: transBrief1,
+                brief2: transBrief2
+            };
+            
+        } catch (error) {
+            console.error("Translation failed:", error);
+            alert(`Translation failed: ${error.message}`);
+            
+            // Restore original values
+            newsCardHeadline.innerHTML = origHeadlineHtml;
+            newsCardBrief1.innerHTML = origBrief1Html;
+            newsCardBrief2.innerHTML = origBrief2Html;
+            
+            // Reset select option back to 'en'
+            e.target.value = 'en';
+        }
+    });
+}
 
 

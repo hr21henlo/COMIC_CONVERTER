@@ -9,6 +9,11 @@ export default defineConfig({
         target: 'https://ai.api.nvidia.com',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/nvidia/, '')
+      },
+      '/api/sarvam': {
+        target: 'https://api.sarvam.ai',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/sarvam/, '')
       }
     }
   },

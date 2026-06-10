@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="./comicGEN favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ComicGen | Article to Comic Converter</title>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <meta name="description" content="Transform long articles into stunning visual comic strips using AI." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.run; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://ai.api.nvidia.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.run https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://ai.api.nvidia.com;">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&display=swap" rel="stylesheet">
@@ -21,28 +22,15 @@
 
     <script>
       (function() {
-        // Random background color
-        const bgPairs = [
-          { primary: '#ffd000', stripe: '#ff9d00' }, // Classic Yellow / Orange
-          { primary: '#00d2ff', stripe: '#009ecc' }, // Electric Cyan / Blue
-          { primary: '#ff007c', stripe: '#d00060' }, // Pop Magenta / Dark Pink
-          { primary: '#05ff80', stripe: '#00b354' }, // Acid Green / Forest
-          { primary: '#a855f7', stripe: '#7e22ce' }, // Cosmic Purple / Deep Violet
-          { primary: '#ff5722', stripe: '#d84315' }, // Action Orange / Dark Orange
-          { primary: '#ff2a2a', stripe: '#c62828' }  // Hero Red / Crimson
-        ];
-        const pair = bgPairs[Math.floor(Math.random() * bgPairs.length)];
         const el = document.getElementById('bgPattern');
         if (el) {
-          el.style.background = `
-            radial-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px),
-            repeating-linear-gradient(-45deg, ${pair.primary}, ${pair.primary} 35px, ${pair.stripe} 35px, ${pair.stripe} 70px)
-          `;
-          el.style.backgroundSize = '18px 18px, auto';
+          el.style.backgroundColor = '#faf9f5';
+          el.style.backgroundImage = 'radial-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px)';
+          el.style.backgroundSize = '18px 18px';
 
-          // Scroll-based parallax speed line animation
+          // Scroll-based parallax halftone dot movement
           window.addEventListener('scroll', () => {
-            el.style.transform = `translateX(${window.scrollY * 0.25}px)`;
+            el.style.transform = `translateX(${window.scrollY * 0.15}px)`;
           });
         }
 
@@ -159,12 +147,6 @@
           <img src="./comicGEN sticker.png" class="logo-sticker" alt="ComicGen Logo" />
         </div>
         <div class="header-actions">
-          <!-- Retro Comic Sound Toggle -->
-          <button id="soundToggle" class="sound-toggle-btn" aria-label="Toggle Sound Effects">
-            <span class="sound-icon">🔊</span>
-            <span class="sound-text">SOUNDS: ON</span>
-          </button>
-
           <!-- Retro Comic Code Badge -->
           <div class="comic-code-badge">
             <div class="badge-inner">
@@ -325,20 +307,30 @@
                 <div class="status-top-bar">STATUS REPORT</div>
                 <div class="status-content">
                   <div id="statusText">BREWING YOUR COMIC STRIP...</div>
-                  <div class="loadingspinner" id="mainLoader">
-                    <div id="square1"></div>
-                    <div id="square2"></div>
-                    <div id="square3"></div>
-                    <div id="square4"></div>
-                    <div id="square5"></div>
+                  <div id="mainLoader" style="width: 140px; height: 140px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                    <lottie-player 
+                      src="./loading.json" 
+                      background="transparent" 
+                      speed="1" 
+                      style="width: 100%; height: 100%;" 
+                      loop 
+                      autoplay>
+                    </lottie-player>
                   </div>
                 </div>
               </div>
               
-              <!-- Comic Book Page Layout -->
+              <!-- Comic News Card Page Layout -->
               <div id="comicPage" class="comic-page-canvas">
-                <div id="comicGrid" class="comic-grid">
-                  <!-- Panels will be injected here -->
+<div id="newsCard" class="news-card">
+                  <div class="news-card-left">
+                    <div id="newsCardHeadline" class="news-card-headline">BREWING HEADLINE...</div>
+                    <div id="newsCardBrief1" class="news-card-brief brief-1">BREWING SHORT STORY PART 1...</div>
+                    <div id="newsCardBrief2" class="news-card-brief brief-2">BREWING SHORT STORY PART 2...</div>
+                  </div>
+                  <div id="newsCardImgContainer" class="news-card-img-container loading-state">
+                    <div class="skeleton-img"></div>
+                  </div>
                 </div>
                 <div class="comic-watermark-overlay">
                   <img src="./comicGEN favicon.png" alt="ComicGen Logo" />
@@ -347,7 +339,21 @@
               </div>
    
               <div class="final-actions" style="display: none;">
-                <button id="downloadBtn" class="btn-secondary-action download">DOWNLOAD STRIP</button>
+                <div class="translate-selector-wrapper">
+                  <select id="cardLanguageSelect" class="btn-secondary-action translate-select">
+                    <option value="en">🌐 TRANSLATE: ENGLISH</option>
+                    <option value="hi-IN">HINDI (हिन्दी)</option>
+                    <option value="bn-IN">BENGALI (বাংলা)</option>
+                    <option value="te-IN">TELUGU (తెలుగు)</option>
+                    <option value="mr-IN">MARATHI (मराठी)</option>
+                    <option value="ta-IN">TAMIL (தமிழ்)</option>
+                    <option value="gu-IN">GUJARATI (ગુજરાતી)</option>
+                    <option value="kn-IN">KANNADA (ಕನ್ನಡ)</option>
+                    <option value="ml-IN">MALAYALAM (മലയാളം)</option>
+                    <option value="pa-IN">PUNJABI (ਪੰਜਾਬੀ)</option>
+                  </select>
+                </div>
+                <button id="downloadBtn" class="btn-secondary-action download">DOWNLOAD CARD</button>
                 <button id="shareBtn" class="btn-ghost-action share">SHARE</button>
               </div>
             </div>
@@ -369,15 +375,15 @@
             
             <div class="strip-panel step-2">
               <div class="panel-num">PANEL 2</div>
-              <h3 class="panel-headline">THE STORYBOARD BRAIN</h3>
-              <p class="panel-body">Google Gemini triggersfallback logic across flash models, slicing your article into a chronological 5-panel storyboard, complete with descriptive image prompts and captions.</p>
+              <h3 class="panel-headline">THE EDITORIAL BRAIN</h3>
+              <p class="panel-body">Google Gemini processes the article in a single prompt to generate a dramatic comic headline, a condensed narration brief, and an art-styled visual description.</p>
               <div class="panel-sticker think">THINK!</div>
             </div>
             
             <div class="strip-panel step-3">
               <div class="panel-num">PANEL 3</div>
               <h3 class="panel-headline">THE ART RENDERING</h3>
-              <p class="panel-body">NVIDIA FLUX NIM processes generated descriptions concurrently to illustrate rich graphic panels in your art style, compiling them into a magazine layout.</p>
+              <p class="panel-body">NVIDIA FLUX NIM processes the generated description to render a single, stunning graphic panel in your chosen art style, compiling them into a gorgeous news splash card.</p>
               <div class="panel-sticker boom">BOOM!</div>
             </div>
           </div>
