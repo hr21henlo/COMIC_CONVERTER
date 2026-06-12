@@ -257,6 +257,7 @@ studentGenerateBtn.addEventListener('click', async () => {
 
     toggleStudentLoading(true);
     resetStudentUI();
+    playSketchingSound(); // Start sketching sound loop
 
     if (studentScrollIndicator) {
         studentScrollIndicator.style.display = 'flex';
@@ -293,6 +294,7 @@ studentGenerateBtn.addEventListener('click', async () => {
 
         // Reveal output strip using Motion.dev slide fade
         studentOutputSection.style.display = 'block';
+        typewriterSFX.playPageTurn(); // Page turn flip sound
         animate("#studentOutputSection", 
             { opacity: [0, 1], y: [40, 0] }, 
             { duration: 0.8, easing: "ease-out" }
@@ -312,11 +314,13 @@ studentGenerateBtn.addEventListener('click', async () => {
 
         updateStudentStatus("Chronicle Successfully Forged!", 100);
         studentGenerateBtn.dataset.success = "true";
+        typewriterSFX.playStamp(); // Ink stamp press thud sound
 
     } catch (err) {
         console.error("Student generation failed:", err);
         alert(`Error: ${err.message}`);
     } finally {
+        stopSketchingSound(); // Stop sketching sound loop
         toggleStudentLoading(false);
     }
 });
@@ -395,6 +399,7 @@ function resetStudentUI() {
 studentDemoBtn.addEventListener('click', async () => {
     toggleStudentLoading(true);
     resetStudentUI();
+    playSketchingSound(); // Start sketching sound loop
     
     if (studentScrollIndicator) {
         studentScrollIndicator.style.display = 'flex';
@@ -404,40 +409,46 @@ studentDemoBtn.addEventListener('click', async () => {
         );
     }
     
-    updateStudentStatus("Demo Mode: Scanning academic references...", 25);
-    await new Promise(resolve => setTimeout(resolve, 1200));
+    try {
+        updateStudentStatus("Demo Mode: Scanning academic references...", 25);
+        await new Promise(resolve => setTimeout(resolve, 1200));
 
-    studentComicTitle.innerText = "THE STORMING OF THE BASTILLE";
-    
-    const fakeCaptions = [
-        "PARIS, JULY 14, 1789: ANGRY CITIZENS ASSEMBLE OUTSIDE THE BASTILLE FORTRESS, DEMANDING GUNPOWDER AND AN END TO THE KING'S TYRANNY!",
-        "THE CHAOTIC CLIMAX: REVOLUTIONARIES BREACH THE GATES, COLLIDING WITH THE GUARD FORCES IN A FIERCE AND HISTORIC FIRE RUN!",
-        "THE REVOLUTION TRIUMPHANT: THE PRISON IS CAPTURED, MARKING THE INITIATION OF THE FRENCH REVOLUTION AND THE COLLAPSE OF ROYAL POWER!"
-    ];
+        studentComicTitle.innerText = "THE STORMING OF THE BASTILLE";
+        
+        const fakeCaptions = [
+            "PARIS, JULY 14, 1789: ANGRY CITIZENS ASSEMBLE OUTSIDE THE BASTILLE FORTRESS, DEMANDING GUNPOWDER AND AN END TO THE KING'S TYRANNY!",
+            "THE CHAOTIC CLIMAX: REVOLUTIONARIES BREACH THE GATES, COLLIDING WITH THE GUARD FORCES IN A FIERCE AND HISTORIC FIRE RUN!",
+            "THE REVOLUTION TRIUMPHANT: THE PRISON IS CAPTURED, MARKING THE INITIATION OF THE FRENCH REVOLUTION AND THE COLLAPSE OF ROYAL POWER!"
+        ];
 
-    for (let i = 1; i <= 3; i++) {
-        document.getElementById(`studentCaption${i}`).innerText = fakeCaptions[i - 1];
-        const container = document.getElementById(`studentImg${i}`);
-        container.className = 'student-panel-img-box loading-state';
-        container.innerHTML = '<div class="skeleton-img"></div>';
+        for (let i = 1; i <= 3; i++) {
+            document.getElementById(`studentCaption${i}`).innerText = fakeCaptions[i - 1];
+            const container = document.getElementById(`studentImg${i}`);
+            container.className = 'student-panel-img-box loading-state';
+            container.innerHTML = '<div class="skeleton-img"></div>';
+        }
+
+        studentOutputSection.style.display = 'block';
+        typewriterSFX.playPageTurn(); // Page turn flip sound
+        animate("#studentOutputSection", 
+            { opacity: [0, 1], y: [40, 0] }, 
+            { duration: 0.8, easing: "ease-out" }
+        );
+        
+        // Simulate sequential loading of images
+        for (let i = 1; i <= 3; i++) {
+            updateStudentStatus(`Demo Mode: Finalizing Panel ${i} details...`, 40 + i * 20);
+            await new Promise(resolve => setTimeout(resolve, 800));
+            const demoImgUrl = `https://picsum.photos/seed/student_${i}_${Math.random()}/800/800`;
+            updateStudentPanelImage(i, demoImgUrl);
+        }
+
+        updateStudentStatus("Demo Chronicle complete!", 100);
+        typewriterSFX.playStamp(); // Ink stamp press thud sound
+    } finally {
+        stopSketchingSound(); // Stop sketching sound loop
+        toggleStudentLoading(false);
     }
-
-    studentOutputSection.style.display = 'block';
-    animate("#studentOutputSection", 
-        { opacity: [0, 1], y: [40, 0] }, 
-        { duration: 0.8, easing: "ease-out" }
-    );
-    
-    // Simulate sequential loading of images
-    for (let i = 1; i <= 3; i++) {
-        updateStudentStatus(`Demo Mode: Finalizing Panel ${i} details...`, 40 + i * 20);
-        await new Promise(resolve => setTimeout(resolve, 800));
-        const demoImgUrl = `https://picsum.photos/seed/student_${i}_${Math.random()}/800/800`;
-        updateStudentPanelImage(i, demoImgUrl);
-    }
-
-    updateStudentStatus("Demo Chronicle complete!", 100);
-    toggleStudentLoading(false);
 });
 
 studentDownloadBtn.addEventListener('click', async () => {
@@ -554,3 +565,545 @@ function anonymizePrompt(prompt, style, caption = '') {
     }
     return simplifiedPrompt;
 }
+
+// --- WEB AUDIO API SCHOLARLY SOUND EFFECTS (TYPEWRITER & PAPER RUSTLE) ---
+const typewriterSFX = {
+    ctx: null,
+    userMuted: false, // track manual mute state
+    init: () => {
+        if (!typewriterSFX.ctx) {
+            typewriterSFX.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (typewriterSFX.ctx.state === 'suspended' && !typewriterSFX.userMuted) {
+            typewriterSFX.ctx.resume();
+        }
+    },
+    playKey: (isSpace = false) => {
+        try {
+            if (typewriterSFX.userMuted) return;
+            typewriterSFX.init();
+            const now = typewriterSFX.ctx.currentTime;
+            const duration = isSpace ? 0.08 : 0.12 + Math.random() * 0.04;
+            
+            // Create noise buffer for pencil scratching
+            const bufferSize = typewriterSFX.ctx.sampleRate * duration;
+            const buffer = typewriterSFX.ctx.createBuffer(1, bufferSize, typewriterSFX.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Rhythmic amplitude modulation to mimic writing strokes
+            const strokeFrequency = 22 + Math.random() * 8; 
+            for (let i = 0; i < bufferSize; i++) {
+                const t = i / typewriterSFX.ctx.sampleRate;
+                const white = Math.random() * 2 - 1;
+                const am = 0.45 + 0.55 * Math.sin(2 * Math.PI * strokeFrequency * t);
+                data[i] = white * am;
+            }
+            
+            const noise = typewriterSFX.ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = typewriterSFX.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            const centerFreq = (isSpace ? 1400 : 1900) + Math.random() * 700;
+            filter.frequency.setValueAtTime(centerFreq, now);
+            filter.frequency.exponentialRampToValueAtTime(centerFreq * 0.75, now + duration);
+            filter.Q.setValueAtTime(3.2, now);
+            
+            const gain = typewriterSFX.ctx.createGain();
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(isSpace ? 0.08 : 0.26, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(typewriterSFX.ctx.destination);
+            
+            noise.start(now);
+            noise.stop(now + duration);
+        } catch (e) {}
+    },
+    playReturn: () => {
+        // Keeps the classic vintage desk bell ding for completion/forge clicks!
+        try {
+            if (typewriterSFX.userMuted) return;
+            typewriterSFX.init();
+            const now = typewriterSFX.ctx.currentTime;
+            
+            const osc1 = typewriterSFX.ctx.createOscillator();
+            const osc2 = typewriterSFX.ctx.createOscillator();
+            const gain = typewriterSFX.ctx.createGain();
+            
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(2100, now);
+            
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(2625, now);
+            
+            gain.gain.setValueAtTime(0.20, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(typewriterSFX.ctx.destination);
+            
+            osc1.start(now);
+            osc2.start(now);
+            osc1.stop(now + 0.3);
+            osc2.stop(now + 0.3);
+        } catch (e) {}
+    },
+    playRustle: () => {
+        try {
+            if (typewriterSFX.userMuted) return;
+            typewriterSFX.init();
+            const now = typewriterSFX.ctx.currentTime;
+            
+            const bufferSize = typewriterSFX.ctx.sampleRate * 0.09;
+            const buffer = typewriterSFX.ctx.createBuffer(1, bufferSize, typewriterSFX.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            const noise = typewriterSFX.ctx.createBufferSource();
+            noise.buffer = buffer;
+            
+            const filter = typewriterSFX.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1400, now);
+            filter.Q.setValueAtTime(2.5, now);
+            
+            const gain = typewriterSFX.ctx.createGain();
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+            
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(typewriterSFX.ctx.destination);
+            
+            noise.start(now);
+            noise.stop(now + 0.09);
+        } catch (e) {}
+    },
+    playStamp: () => {
+        try {
+            if (typewriterSFX.userMuted) return;
+            typewriterSFX.init();
+            const now = typewriterSFX.ctx.currentTime;
+            
+            // 1. Heavy low-frequency rubber thud
+            const osc = typewriterSFX.ctx.createOscillator();
+            const gainOsc = typewriterSFX.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(120, now);
+            osc.frequency.exponentialRampToValueAtTime(18, now + 0.16);
+            
+            gainOsc.gain.setValueAtTime(0.38, now);
+            gainOsc.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+            
+            osc.connect(gainOsc);
+            gainOsc.connect(typewriterSFX.ctx.destination);
+            
+            // 2. High-frequency wood body impact click
+            const clickOsc = typewriterSFX.ctx.createOscillator();
+            const clickGain = typewriterSFX.ctx.createGain();
+            clickOsc.type = 'triangle';
+            clickOsc.frequency.setValueAtTime(1100, now);
+            clickOsc.frequency.exponentialRampToValueAtTime(350, now + 0.035);
+            
+            clickGain.gain.setValueAtTime(0.20, now);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+            
+            clickOsc.connect(clickGain);
+            clickGain.connect(typewriterSFX.ctx.destination);
+            
+            osc.start(now);
+            clickOsc.start(now);
+            osc.stop(now + 0.16);
+            clickOsc.stop(now + 0.035);
+        } catch (e) {}
+    },
+    playPageTurn: () => {
+        try {
+            if (typewriterSFX.userMuted) return;
+            typewriterSFX.init();
+            const now = typewriterSFX.ctx.currentTime;
+            const duration = 0.48;
+            
+            const bufferSize = typewriterSFX.ctx.sampleRate * duration;
+            const buffer = typewriterSFX.ctx.createBuffer(1, bufferSize, typewriterSFX.ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                const t = i / typewriterSFX.ctx.sampleRate;
+                const white = Math.random() * 2 - 1;
+                const envelope = Math.sin(Math.PI * t / duration);
+                const flutter = 0.55 + 0.45 * Math.sin(2 * Math.PI * 7.5 * t);
+                data[i] = white * envelope * flutter * 0.075;
+            }
+            
+            const source = typewriterSFX.ctx.createBufferSource();
+            source.buffer = buffer;
+            
+            const filter = typewriterSFX.ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(550, now);
+            filter.frequency.exponentialRampToValueAtTime(1700, now + duration * 0.55);
+            filter.frequency.exponentialRampToValueAtTime(750, now + duration);
+            filter.Q.setValueAtTime(1.6, now);
+            
+            const gain = typewriterSFX.ctx.createGain();
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.45, now + 0.09);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+            
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(typewriterSFX.ctx.destination);
+            
+            source.start(now);
+            source.stop(now + duration);
+        } catch (e) {}
+    }
+};
+
+let sketchingInterval = null;
+function playSketchingSound() {
+    if (typewriterSFX.userMuted) return;
+    if (sketchingInterval) return;
+    typewriterSFX.init();
+    const ctx = typewriterSFX.ctx;
+    
+    const playStroke = () => {
+        try {
+            if (typewriterSFX.userMuted) return;
+            const now = ctx.currentTime;
+            const duration = 0.15 + Math.random() * 0.15;
+            
+            const bufferSize = ctx.sampleRate * duration;
+            const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            const strokeFreq = 14 + Math.random() * 6;
+            for (let i = 0; i < bufferSize; i++) {
+                const t = i / ctx.sampleRate;
+                const noiseVal = Math.random() * 2 - 1;
+                const am = 0.45 + 0.55 * Math.sin(2 * Math.PI * strokeFreq * t);
+                data[i] = noiseVal * am;
+            }
+            
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            const startFreq = 1700 + Math.random() * 400;
+            const endFreq = 1200 + Math.random() * 300;
+            filter.frequency.setValueAtTime(startFreq, now);
+            filter.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
+            filter.Q.setValueAtTime(2.6, now);
+            
+            const gain = ctx.createGain();
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.08, now + 0.03);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            
+            source.connect(filter);
+            filter.connect(gain);
+            gain.connect(ctx.destination);
+            
+            source.start(now);
+            source.stop(now + duration);
+        } catch (e) {}
+    };
+    
+    sketchingInterval = setInterval(() => {
+        if (Math.random() > 0.18) {
+            playStroke();
+        }
+    }, 160);
+}
+
+function stopSketchingSound() {
+    if (sketchingInterval) {
+        clearInterval(sketchingInterval);
+        sketchingInterval = null;
+    }
+}
+
+// Bind keyboard sounds
+const textInput = document.getElementById('studentTextarea');
+if (textInput) {
+    textInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            typewriterSFX.playReturn();
+        } else if (e.key === ' ' || e.key === 'Spacebar') {
+            typewriterSFX.playKey(true);
+        } else if (e.key.length === 1) {
+            typewriterSFX.playKey(false);
+        }
+    });
+}
+
+// Bind hover and click sounds for scholastic elements
+let vinylNode = null;
+let ambientMusicInterval = null;
+let ambientMusicStep = 0;
+let ambientMusicPlaying = false;
+
+const playAmbientMusic = () => {
+    if (typewriterSFX.userMuted) return;
+    if (ambientMusicPlaying) return;
+    typewriterSFX.init();
+    ambientMusicPlaying = true;
+    const ctx = typewriterSFX.ctx;
+    
+    // 1. Continuous vinyl record dust noise
+    try {
+        const bufferSize = ctx.sampleRate * 2;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        
+        let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+            const white = Math.random() * 2 - 1;
+            b0 = 0.99886 * b0 + white * 0.0555179;
+            b1 = 0.99332 * b1 + white * 0.0750759;
+            b2 = 0.96900 * b2 + white * 0.1538520;
+            b3 = 0.86650 * b3 + white * 0.3104856;
+            b4 = 0.55000 * b4 + white * 0.5329522;
+            b5 = -0.7616 * b5 - white * 0.0168980;
+            const pink = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+            b6 = white * 0.115926;
+            
+            let pop = 0;
+            if (Math.random() > 0.9997) {
+                pop = (Math.random() * 2 - 1) * 0.45;
+            }
+            
+            data[i] = (pink * 0.05 + pop) * 0.02;
+        }
+        
+        const noiseNode = ctx.createBufferSource();
+        noiseNode.buffer = buffer;
+        noiseNode.loop = true;
+        
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3200, ctx.currentTime);
+        
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0.02, ctx.currentTime);
+        
+        noiseNode.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        noiseNode.start(0);
+        vinylNode = noiseNode;
+    } catch (e) {
+        console.warn("Vinyl crackle failed", e);
+    }
+    
+    // 2. Antique scholarly minor theme loop
+    const bpm = 75;
+    const stepTime = 60 / bpm;
+    
+    const melody = [
+        392.00, 311.13, 349.23, 261.63, 293.66, 311.13, 392.00, 0,
+        349.23, 293.66, 311.13, 233.08, 261.63, 293.66, 349.23, 0,
+        392.00, 466.16, 440.00, 349.23, 392.00, 311.13, 261.63, 0,
+        293.66, 349.23, 311.13, 261.63, 196.00, 293.66, 261.63, 0
+    ];
+    
+    const harmony = [
+        130.81, 0, 174.61, 0, 146.83, 0, 130.81, 0,
+        116.54, 0, 130.81, 0, 146.83, 0, 116.54, 0,
+        130.81, 0, 174.61, 0, 130.81, 0, 98.00, 0,
+        146.83, 0, 130.81, 0, 98.00, 0, 130.81, 0
+    ];
+    
+    let nextNoteTime = ctx.currentTime;
+    
+    function scheduler() {
+        while (nextNoteTime < ctx.currentTime + 0.1) {
+            const time = nextNoteTime;
+            const step = ambientMusicStep % melody.length;
+            
+            const melFreq = melody[step];
+            if (melFreq > 0) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(melFreq, time);
+                
+                const subOsc = ctx.createOscillator();
+                subOsc.type = 'triangle';
+                subOsc.frequency.setValueAtTime(melFreq * 0.5, time);
+                
+                // Vintage Tape Warble Vibrato (LFO)
+                const lfo = ctx.createOscillator();
+                lfo.frequency.setValueAtTime(4.2 + Math.random() * 0.8, time); // Speed of speed wobble
+                const lfoGain = ctx.createGain();
+                lfoGain.gain.setValueAtTime(1.5 + Math.random() * 0.8, time); // Pitch sweep depth
+                
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                lfoGain.connect(subOsc.frequency);
+                
+                const filter = ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, time);
+                
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.008, time + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 1.2);
+                
+                osc.connect(filter);
+                subOsc.connect(filter);
+                filter.connect(gain);
+                gain.connect(ctx.destination);
+                
+                lfo.start(time);
+                osc.start(time);
+                subOsc.start(time);
+                
+                lfo.stop(time + 1.25);
+                osc.stop(time + 1.25);
+                subOsc.stop(time + 1.25);
+            }
+            
+            const bassFreq = harmony[step];
+            if (bassFreq > 0) {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(bassFreq, time);
+                
+                // Vintage Tape Warble for Bass (slower LFO)
+                const lfo = ctx.createOscillator();
+                lfo.frequency.setValueAtTime(3.5, time);
+                const lfoGain = ctx.createGain();
+                lfoGain.gain.setValueAtTime(0.6, time);
+                
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc.frequency);
+                
+                gain.gain.setValueAtTime(0, time);
+                gain.gain.linearRampToValueAtTime(0.010, time + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.0001, time + 1.8);
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                lfo.start(time);
+                osc.start(time);
+                lfo.stop(time + 1.85);
+                osc.stop(time + 1.85);
+            }
+            
+            nextNoteTime += stepTime;
+            ambientMusicStep++;
+        }
+    }
+    
+    ambientMusicInterval = setInterval(scheduler, 50);
+};
+
+function setupStudentAudio() {
+    const audioToggle = document.getElementById('studentAudioToggle');
+
+    // 1. Initial background gesture activator
+    const initAudioOnGesture = () => {
+        if (typewriterSFX.userMuted) return;
+        typewriterSFX.init();
+        if (typewriterSFX.ctx) {
+            playAmbientMusic();
+            if (audioToggle) {
+                audioToggle.innerText = "🔊 AUDIO ON";
+                audioToggle.classList.add('playing');
+            }
+        }
+        ['click', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+            document.removeEventListener(evt, initAudioOnGesture);
+        });
+    };
+    
+    // Bind global gesture events
+    ['click', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+        document.addEventListener(evt, initAudioOnGesture);
+    });
+
+    // Explicit audio toggle button listener in the header bar
+    if (audioToggle) {
+        audioToggle.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering initAudioOnGesture twice
+            typewriterSFX.init();
+            const ctx = typewriterSFX.ctx;
+            if (ctx) {
+                typewriterSFX.userMuted = !typewriterSFX.userMuted;
+                if (typewriterSFX.userMuted) {
+                    ctx.suspend();
+                    if (ambientMusicInterval) {
+                        clearInterval(ambientMusicInterval);
+                        ambientMusicInterval = null;
+                    }
+                    if (vinylNode) {
+                        try { vinylNode.stop(); } catch(err){}
+                        vinylNode = null;
+                    }
+                    ambientMusicPlaying = false;
+                    audioToggle.innerText = "🔈 AUDIO MUTED";
+                    audioToggle.classList.remove('playing');
+                } else {
+                    ctx.resume();
+                    playAmbientMusic();
+                    audioToggle.innerText = "🔊 AUDIO ON";
+                    audioToggle.classList.add('playing');
+                }
+            }
+        });
+    }
+
+    const hoverSelectors = [
+        'button',
+        '.style-card',
+        '.btn-back',
+        '.btn-scroll-down',
+        '.graded-stamp'
+    ];
+
+    document.addEventListener('mouseover', (e) => {
+        if (typewriterSFX.userMuted) return;
+        for (const selector of hoverSelectors) {
+            const el = e.target.closest(selector);
+            if (el) {
+                if (!el.dataset.sfxHovered) {
+                    el.dataset.sfxHovered = "true";
+                    if (selector === '.graded-stamp') {
+                        typewriterSFX.playStamp();
+                    } else {
+                        typewriterSFX.playRustle();
+                    }
+                    setTimeout(() => { delete el.dataset.sfxHovered; }, 280);
+                }
+                break;
+            }
+        }
+    });
+
+    document.addEventListener('click', (e) => {
+        if (typewriterSFX.userMuted) return;
+        const target = e.target.closest('button, .style-card, .btn-back, .btn-scroll-down, .graded-stamp');
+        if (target) {
+            if (target.id === 'studentGenerateBtn' || target.closest('.generate-btn-wrapper')) {
+                typewriterSFX.playReturn();
+            } else if (target.classList.contains('graded-stamp')) {
+                typewriterSFX.playStamp();
+            } else {
+                typewriterSFX.playKey(false);
+            }
+        }
+    });
+}
+
+// Initialize audio listeners
+setupStudentAudio();

@@ -2565,3 +2565,32 @@ textarea:focus {
   font-weight: 800;
   font-size: 0.95rem;
 }
+
+/* Audio toggle button in header */
+.btn-audio-toggle {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 0.85rem;
+  letter-spacing: 1px;
+  color: #000000;
+  background: #ffffff;
+  border: 3px solid #000000;
+  padding: 6px 14px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px #000000;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-audio-toggle:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px #000000;
+}
+
+.btn-audio-toggle:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0px #000000;
+}
+
+.btn-audio-toggle.playing {
+  background: #ffd000;
+  color: #000000;
+}

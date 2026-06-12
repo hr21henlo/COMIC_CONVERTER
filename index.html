@@ -11,26 +11,78 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&family=Luckiest+Guy&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./style.css" />
+    <style>
+      .logo-marquee {
+        display: flex;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        align-items: center;
+      }
+      .logo-marquee-track {
+        display: flex;
+        align-items: center;
+        gap: 50px;
+        flex-shrink: 0;
+        animation: scroll-marquee 15s linear infinite;
+        padding-right: 50px;
+      }
+      .logo-marquee-track .logo-sticker {
+        height: 52px !important;
+        width: auto;
+        flex-shrink: 0;
+        cursor: pointer;
+      }
+      @keyframes scroll-marquee {
+        0% {
+          transform: translateX(0);
+        }
+        100% {
+          transform: translateX(-100%);
+        }
+      }
+    </style>
   </head>
   <body>
     <!-- Dynamic Background Pattern Layer -->
     <div class="bg-pattern" id="bgPattern"></div>
+    <div id="bgDots" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1.5; pointer-events: none; background-image: radial-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px); background-size: 18px 18px;"></div>
 
     <!-- Dynamic Background Graffiti Container -->
     <div id="graffitiContainer"></div>
 
     <script>
       (function() {
+        // Random background color
+        const bgPairs = [
+          { primary: '#ffd000', stripe: '#ff9d00' }, // Classic Yellow / Orange
+          { primary: '#00d2ff', stripe: '#009ecc' }, // Electric Cyan / Blue
+          { primary: '#ff007c', stripe: '#d00060' }, // Pop Magenta / Dark Pink
+          { primary: '#05ff80', stripe: '#00b354' }, // Acid Green / Forest
+          { primary: '#a855f7', stripe: '#7e22ce' }, // Cosmic Purple / Deep Violet
+          { primary: '#ff5722', stripe: '#d84315' }, // Action Orange / Dark Orange
+          { primary: '#ff2a2a', stripe: '#c62828' }  // Hero Red / Crimson
+        ];
+        const pair = bgPairs[Math.floor(Math.random() * bgPairs.length)];
         const el = document.getElementById('bgPattern');
         if (el) {
-          el.style.backgroundColor = '#faf9f5';
-          el.style.backgroundImage = 'radial-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px)';
-          el.style.backgroundSize = '18px 18px';
+          el.style.background = `
+            repeating-linear-gradient(-45deg, ${pair.primary}, ${pair.primary} 35px, ${pair.stripe} 35px, ${pair.stripe} 70px)
+          `;
 
-          // Scroll-based parallax halftone dot movement
+          // Scroll-based parallax speed line animation with requestAnimationFrame for 60fps performance
+          let scrollY = window.scrollY;
+          let ticking = false;
           window.addEventListener('scroll', () => {
-            el.style.transform = `translateX(${window.scrollY * 0.15}px)`;
-          });
+            scrollY = window.scrollY;
+            if (!ticking) {
+              window.requestAnimationFrame(() => {
+                el.style.transform = `translateX(${scrollY * 0.25}px)`;
+                ticking = false;
+              });
+              ticking = true;
+            }
+          }, { passive: true });
         }
 
         // Pool of comic sound effects (increased words as requested)
@@ -138,9 +190,460 @@
           }
         }
       })();
+
+      // --- WEB AUDIO API COMIC SOUND EFFECTS ENGINE (NON-MUTEABLE) ---
+      (function() {
+        const sfx = {
+          ctx: null,
+          userMuted: false, // track manual mute state
+          musicInterval: null,
+          musicStep: 0,
+          musicPlaying: false,
+          initCtx: () => {
+            if (!sfx.ctx) {
+              sfx.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (sfx.ctx.state === 'suspended' && !sfx.userMuted) {
+              sfx.ctx.resume();
+            }
+          },
+          updateToggleUI: () => {
+            const audioToggle = document.getElementById('audioToggleBtn');
+            if (audioToggle) {
+              if (sfx.userMuted) {
+                audioToggle.innerText = "🔈 AUDIO MUTED";
+                audioToggle.classList.remove('playing');
+              } else {
+                audioToggle.innerText = "🔊 AUDIO ON";
+                audioToggle.classList.add('playing');
+              }
+            }
+          },
+          playPop: () => {
+            try {
+              if (sfx.userMuted) return;
+              sfx.initCtx();
+              const now = sfx.ctx.currentTime;
+              const osc = sfx.ctx.createOscillator();
+              const gain = sfx.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(600, now);
+              osc.frequency.exponentialRampToValueAtTime(1500, now + 0.05);
+              gain.gain.setValueAtTime(0.24, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+              osc.connect(gain);
+              gain.connect(sfx.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.05);
+            } catch (e) {}
+          },
+          playBoing: () => {
+            try {
+              if (sfx.userMuted) return;
+              sfx.initCtx();
+              const now = sfx.ctx.currentTime;
+              const osc = sfx.ctx.createOscillator();
+              const gain = sfx.ctx.createGain();
+              osc.type = 'triangle';
+              
+              osc.frequency.setValueAtTime(130, now);
+              osc.frequency.exponentialRampToValueAtTime(380, now + 0.08);
+              osc.frequency.exponentialRampToValueAtTime(160, now + 0.16);
+              osc.frequency.exponentialRampToValueAtTime(320, now + 0.24);
+              osc.frequency.exponentialRampToValueAtTime(140, now + 0.32);
+              osc.frequency.exponentialRampToValueAtTime(220, now + 0.40);
+              osc.frequency.exponentialRampToValueAtTime(50, now + 0.50);
+
+              gain.gain.setValueAtTime(0.001, now);
+              gain.gain.linearRampToValueAtTime(0.28, now + 0.05);
+              gain.gain.linearRampToValueAtTime(0.28, now + 0.30);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+
+              osc.connect(gain);
+              gain.connect(sfx.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.50);
+            } catch (e) {}
+          },
+          playZap: () => {
+            try {
+              if (sfx.userMuted) return;
+              sfx.initCtx();
+              const now = sfx.ctx.currentTime;
+              const osc = sfx.ctx.createOscillator();
+              const gain = sfx.ctx.createGain();
+              osc.type = 'sawtooth';
+              osc.frequency.setValueAtTime(850, now);
+              osc.frequency.exponentialRampToValueAtTime(80, now + 0.18);
+              gain.gain.setValueAtTime(0.20, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+              osc.connect(gain);
+              gain.connect(sfx.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.18);
+            } catch (e) {}
+          },
+          playWhistle: () => {
+            try {
+              if (sfx.userMuted) return;
+              sfx.initCtx();
+              const now = sfx.ctx.currentTime;
+              const osc = sfx.ctx.createOscillator();
+              const gain = sfx.ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(250, now);
+              osc.frequency.quadraticRampToValueAtTime(850, now + 0.22);
+              gain.gain.setValueAtTime(0.18, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+              osc.connect(gain);
+              gain.connect(sfx.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.22);
+            } catch (e) {}
+          },
+          playWobble: () => {
+            try {
+              if (sfx.userMuted) return;
+              sfx.initCtx();
+              const now = sfx.ctx.currentTime;
+              const osc = sfx.ctx.createOscillator();
+              const gain = sfx.ctx.createGain();
+              osc.type = 'triangle';
+              
+              osc.frequency.setValueAtTime(320, now);
+              for (let i = 0; i < 6; i++) {
+                const time = now + (i * 0.04);
+                const freq = i % 2 === 0 ? 480 : 220;
+                osc.frequency.linearRampToValueAtTime(freq, time + 0.04);
+              }
+              
+              gain.gain.setValueAtTime(0.20, now);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+              osc.connect(gain);
+              gain.connect(sfx.ctx.destination);
+              osc.start(now);
+              osc.stop(now + 0.24);
+            } catch (e) {}
+          },
+          playGenerate: () => {
+            try {
+              if (sfx.userMuted) return;
+              sfx.initCtx();
+              const now = sfx.ctx.currentTime;
+              
+              // Bubble cascade (cooking theme)
+              for (let i = 0; i < 15; i++) {
+                const delay = i * 0.07;
+                const osc = sfx.ctx.createOscillator();
+                const gain = sfx.ctx.createGain();
+                osc.type = 'sine';
+                const baseFreq = 220 + Math.random() * 580;
+                osc.frequency.setValueAtTime(baseFreq, now + delay);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 2.8, now + delay + 0.06);
+                gain.gain.setValueAtTime(0.001, now + delay);
+                gain.gain.linearRampToValueAtTime(0.05, now + delay + 0.01);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + delay + 0.06);
+                osc.connect(gain);
+                gain.connect(sfx.ctx.destination);
+                osc.start(now + delay);
+                osc.stop(now + delay + 0.06);
+              }
+
+              // Comical rising slide whistle
+              const sweepOsc = sfx.ctx.createOscillator();
+              const sweepGain = sfx.ctx.createGain();
+              sweepOsc.type = 'triangle';
+              sweepOsc.frequency.setValueAtTime(140, now);
+              sweepOsc.frequency.exponentialRampToValueAtTime(1100, now + 0.95);
+              sweepGain.gain.setValueAtTime(0.03, now);
+              sweepGain.gain.linearRampToValueAtTime(0.03, now + 0.75);
+              sweepGain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
+              sweepOsc.connect(sweepGain);
+              sweepGain.connect(sfx.ctx.destination);
+              sweepOsc.start(now);
+              sweepOsc.stop(now + 0.95);
+
+              // Fun cartoon "TADA" brassy horn chord when comic is completed
+              setTimeout(() => {
+                if (sfx.userMuted) return;
+                const tadaNow = sfx.ctx.currentTime;
+                const freqs = [392.00, 587.33, 783.99]; // G4, D5, G5
+                freqs.forEach(freq => {
+                  const osc = sfx.ctx.createOscillator();
+                  const gain = sfx.ctx.createGain();
+                  osc.type = 'sawtooth';
+                  
+                  osc.frequency.setValueAtTime(freq, tadaNow);
+                  osc.frequency.linearRampToValueAtTime(freq + 6, tadaNow + 0.1);
+                  osc.frequency.linearRampToValueAtTime(freq - 6, tadaNow + 0.2);
+                  osc.frequency.linearRampToValueAtTime(freq, tadaNow + 0.3);
+                  
+                  const filter = sfx.ctx.createBiquadFilter();
+                  filter.type = 'lowpass';
+                  filter.frequency.setValueAtTime(1300, tadaNow);
+                  
+                  gain.gain.setValueAtTime(0.03, tadaNow);
+                  gain.gain.linearRampToValueAtTime(0.03, tadaNow + 0.25);
+                  gain.gain.exponentialRampToValueAtTime(0.001, tadaNow + 0.45);
+                  
+                  osc.connect(filter);
+                  filter.connect(gain);
+                  gain.connect(sfx.ctx.destination);
+                  osc.start(tadaNow);
+                  osc.stop(tadaNow + 0.45);
+                });
+              }, 950);
+            } catch (e) {}
+          },
+          playMusic: () => {
+            if (sfx.userMuted) return;
+            if (sfx.musicPlaying) return;
+            sfx.initCtx();
+            sfx.musicPlaying = true;
+            
+            const bpm = 135;
+            const stepTime = 60 / bpm / 2; // eighth notes
+            
+            const melodyPattern = [
+              261.63, 0, 329.63, 392.00, 0, 329.63, 293.66, 392.00,
+              440.00, 0, 392.00, 523.25, 0, 440.00, 392.00, 0,
+              349.23, 0, 392.00, 440.00, 0, 392.00, 349.23, 329.63,
+              293.66, 0, 329.63, 392.00, 293.66, 0, 0, 0
+            ];
+            
+            const bassPattern = [
+              130.81, 130.81, 196.00, 196.00, 146.83, 146.83, 196.00, 196.00,
+              174.61, 174.61, 220.00, 220.00, 196.00, 196.00, 130.81, 130.81,
+              174.61, 174.61, 174.61, 174.61, 130.81, 130.81, 130.81, 130.81,
+              146.83, 146.83, 196.00, 196.00, 130.81, 196.00, 130.81, 0
+            ];
+            
+            let nextNoteTime = sfx.ctx.currentTime;
+            
+            function scheduler() {
+              while (nextNoteTime < sfx.ctx.currentTime + 0.1) {
+                const time = nextNoteTime;
+                const step = sfx.musicStep % melodyPattern.length;
+                
+                // Melody Osc
+                const melFreq = melodyPattern[step];
+                if (melFreq > 0) {
+                  const osc = sfx.ctx.createOscillator();
+                  const gain = sfx.ctx.createGain();
+                  osc.type = 'triangle';
+                  osc.frequency.setValueAtTime(melFreq, time);
+                  
+                  gain.gain.setValueAtTime(0, time);
+                  gain.gain.linearRampToValueAtTime(0.0025, time + 0.01);
+                  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.14);
+                  
+                  osc.connect(gain);
+                  gain.connect(sfx.ctx.destination);
+                  osc.start(time);
+                  osc.stop(time + 0.15);
+                }
+                
+                // Bass Osc
+                const bassFreq = bassPattern[step];
+                if (bassFreq > 0 && step % 2 === 0) {
+                  const osc = sfx.ctx.createOscillator();
+                  const gain = sfx.ctx.createGain();
+                  osc.type = 'sine';
+                  osc.frequency.setValueAtTime(bassFreq, time);
+                  
+                  gain.gain.setValueAtTime(0, time);
+                  gain.gain.linearRampToValueAtTime(0.003, time + 0.01);
+                  gain.gain.exponentialRampToValueAtTime(0.001, time + 0.20);
+                  
+                  osc.connect(gain);
+                  gain.connect(sfx.ctx.destination);
+                  osc.start(time);
+                  osc.stop(time + 0.22);
+                }
+                
+                // Noise percussion tick on beats 2 and 4 (step 4, 12, 20, 28)
+                if (step % 8 === 4) {
+                  const bufferSize = sfx.ctx.sampleRate * 0.02;
+                  const buffer = sfx.ctx.createBuffer(1, bufferSize, sfx.ctx.sampleRate);
+                  const data = buffer.getChannelData(0);
+                  for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                  }
+                  const noise = sfx.ctx.createBufferSource();
+                  noise.buffer = buffer;
+                  const filter = sfx.ctx.createBiquadFilter();
+                  filter.type = 'bandpass';
+                  filter.frequency.setValueAtTime(1200, time);
+                  const noiseGain = sfx.ctx.createGain();
+                  noiseGain.gain.setValueAtTime(0.0008, time);
+                  noiseGain.gain.exponentialRampToValueAtTime(0.0001, time + 0.02);
+                  
+                  noise.connect(filter);
+                  filter.connect(noiseGain);
+                  noiseGain.connect(sfx.ctx.destination);
+                  noise.start(time);
+                  noise.stop(time + 0.02);
+                }
+                
+                nextNoteTime += stepTime;
+                sfx.musicStep++;
+              }
+            }
+            
+            sfx.musicInterval = setInterval(scheduler, 40);
+          },
+          stopMusic: () => {
+            if (sfx.musicInterval) {
+              clearInterval(sfx.musicInterval);
+              sfx.musicInterval = null;
+            }
+            sfx.musicPlaying = false;
+          }
+        };
+
+        // 1. Initial background gesture activator
+        const initAudioOnGesture = () => {
+          if (sfx.userMuted) return;
+          sfx.initCtx();
+          if (sfx.ctx) {
+            sfx.playMusic();
+            sfx.updateToggleUI();
+          }
+          // Remove gesture event bindings
+          ['click', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+            document.removeEventListener(evt, initAudioOnGesture);
+          });
+        };
+        ['click', 'keydown', 'mousedown', 'touchstart'].forEach(evt => {
+          document.addEventListener(evt, initAudioOnGesture);
+        });
+
+        // Explicit audio toggle button listener bound safely after DOM parses
+        document.addEventListener('DOMContentLoaded', () => {
+          sfx.updateToggleUI();
+          const audioToggle = document.getElementById('audioToggleBtn');
+          if (audioToggle) {
+            audioToggle.addEventListener('click', (e) => {
+              e.stopPropagation(); // Prevent triggering initAudioOnGesture twice
+              sfx.initCtx();
+              const ctx = sfx.ctx;
+              if (ctx) {
+                sfx.userMuted = !sfx.userMuted;
+                sfx.updateToggleUI();
+                if (sfx.userMuted) {
+                  ctx.suspend();
+                  sfx.stopMusic();
+                } else {
+                  ctx.resume();
+                  sfx.playMusic();
+                }
+              }
+            });
+          }
+        });
+
+        // 2. Hover sounds mapping
+        const hoverSelectors = {
+          pop: [
+            'button',
+            '.category-pills .pill',
+            '.style-card',
+            '.close-modal-btn',
+            '.fan-deck-nav',
+            '.final-actions button'
+          ],
+          wobble: [
+            '.logo-sticker',
+            '.comic-code-badge'
+          ],
+          whistle: [
+            '#newsSearch',
+            'textarea'
+          ]
+        };
+
+        document.addEventListener('mouseover', (e) => {
+          if (sfx.userMuted) return;
+          // Find if target matches any hover sound selectors
+          for (const [soundName, selectors] of Object.entries(hoverSelectors)) {
+            for (const selector of selectors) {
+              const el = e.target.closest(selector);
+              if (el) {
+                if (!el.dataset.sfxHovered) {
+                  el.dataset.sfxHovered = "true";
+                  
+                  // Play matched sound
+                  if (soundName === 'pop') sfx.playPop();
+                  else if (soundName === 'wobble') sfx.playWobble();
+                  else if (soundName === 'whistle') sfx.playWhistle();
+                  
+                  // Small cool down to avoid rapid trigger spam
+                  setTimeout(() => { delete el.dataset.sfxHovered; }, 300);
+                }
+                return; // found match, exit
+              }
+            }
+          }
+        });
+
+        // 3. Click sounds mapping
+        document.addEventListener('click', (e) => {
+          if (sfx.userMuted) return;
+          // Check generate action
+          const genBtn = e.target.closest('#generateBtn, #generateText, .generate-btn-wrapper');
+          if (genBtn) {
+            sfx.playGenerate();
+            return;
+          }
+
+          // Check badge / logo zap click
+          const zapBtn = e.target.closest('.logo-sticker, .comic-code-badge');
+          if (zapBtn) {
+            sfx.playZap();
+            return;
+          }
+
+          // Check slide whistle clicks (text input focus)
+          const whistleBtn = e.target.closest('#newsSearch, textarea');
+          if (whistleBtn) {
+            sfx.playWhistle();
+            return;
+          }
+
+          // Check normal interactive element click (boing!)
+          const interactiveSelector = 'button, .category-pills .pill, .style-card, .close-modal-btn, .fan-deck-nav';
+          const el = e.target.closest(interactiveSelector);
+          if (el) {
+            sfx.playBoing();
+          }
+        });
+      })();
+
+      // --- INFINITE SCROLL MARQUEE GENERATOR ---
+      (function() {
+        document.addEventListener('DOMContentLoaded', () => {
+          const track1 = document.getElementById('marqueeTrack1');
+          const track2 = document.getElementById('marqueeTrack2');
+          if (track1 && track2) {
+            const stickerCount = 10;
+            let trackHtml = '';
+            for (let i = 0; i < stickerCount; i++) {
+              trackHtml += `<img src="./comicGEN sticker.png" class="logo-sticker" alt="ComicGen Logo" />`;
+            }
+            track1.innerHTML = trackHtml;
+            track2.innerHTML = trackHtml;
+          }
+        });
+      })();
     </script>
 
-    <header class="comic-header-bar"></header>
+    <header class="comic-header-bar">
+      <div class="logo-marquee">
+        <div class="logo-marquee-track" id="marqueeTrack1"></div>
+        <div class="logo-marquee-track" id="marqueeTrack2"></div>
+      </div>
+      <button id="audioToggleBtn" class="btn-audio-toggle playing" style="position: absolute; right: 25px; z-index: 1010;">🔊 AUDIO ON</button>
+    </header>
 
     <div id="app">
       <main>

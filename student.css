@@ -177,10 +177,16 @@ body {
 
 /* Input Panel styled like an old library index card catalog */
 .student-input-panel {
-  background: var(--v-paper);
+  background: 
+    radial-gradient(ellipse at 85% 15%, transparent 50px, rgba(112, 66, 20, 0.06) 52px, rgba(112, 66, 20, 0.02) 54px, transparent 65px),
+    radial-gradient(ellipse at 85% 15%, rgba(112, 66, 20, 0.02) 0%, transparent 60%),
+    radial-gradient(circle at 12% 82%, rgba(43, 43, 40, 0.05) 0%, rgba(43, 43, 40, 0.02) 2px, transparent 5px),
+    radial-gradient(circle at 13% 84%, rgba(43, 43, 40, 0.04) 0%, rgba(43, 43, 40, 0.01) 1px, transparent 4px),
+    repeating-radial-gradient(rgba(0, 0, 0, 0.008) 0px, rgba(0, 0, 0, 0.008) 1px, transparent 1px, transparent 4px),
+    var(--v-paper);
   border: var(--double-border);
   padding: 2.5rem;
-  box-shadow: 8px 8px 0px var(--v-ink);
+  box-shadow: 8px 12px 28px rgba(0, 0, 0, 0.08), 8px 8px 0px var(--v-ink);
   position: relative;
 }
 
@@ -511,14 +517,20 @@ textarea:focus {
 
 /* 3-Panel Comic Canvas (textbook aesthetic) */
 .student-comic-canvas {
-  background: #ffffff;
+  background: 
+    radial-gradient(ellipse at 15% 85%, transparent 35px, rgba(112, 66, 20, 0.05) 37px, rgba(112, 66, 20, 0.01) 39px, transparent 48px),
+    radial-gradient(ellipse at 15% 85%, rgba(112, 66, 20, 0.01) 0%, transparent 45%),
+    radial-gradient(circle at 82% 18%, rgba(43, 43, 40, 0.04) 0%, rgba(43, 43, 40, 0.02) 1.5px, transparent 4px),
+    radial-gradient(circle at 83% 20%, rgba(43, 43, 40, 0.03) 0%, rgba(43, 43, 40, 0.01) 1px, transparent 3px),
+    repeating-radial-gradient(rgba(0, 0, 0, 0.006) 0px, rgba(0, 0, 0, 0.006) 1px, transparent 1px, transparent 4px),
+    radial-gradient(rgba(43, 43, 40, 0.02) 1.5px, transparent 1.5px),
+    #ffffff;
+  background-size: auto, auto, auto, auto, auto, 12px 12px, auto;
   border: var(--double-border);
   padding: 30px;
-  box-shadow: 8px 8px 0px var(--v-ink);
+  box-shadow: 8px 12px 28px rgba(0, 0, 0, 0.08), 8px 8px 0px var(--v-ink);
   position: relative;
   overflow: hidden;
-  background-image: radial-gradient(rgba(43, 43, 40, 0.03) 1.5px, transparent 1.5px);
-  background-size: 12px 12px;
 }
 
 /* Double lined borders inside canvas */
@@ -735,4 +747,294 @@ textarea:focus {
   .comic-header-bar {
     padding: 0.8rem 1.2rem;
   }
+}
+
+/* --- VINTAGE WORKBOOK SPIRAL BINDING & SCHOOL STAMP STYLES --- */
+.student-input-panel, .student-comic-canvas {
+  position: relative;
+  padding-left: 4.8rem !important; /* Spacing for spiral rings */
+}
+
+/* Notebook red margin line */
+.student-input-panel::before, .student-comic-canvas::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3.6rem;
+  width: 2px;
+  background: rgba(139, 38, 53, 0.35); /* Antique Crimson margin */
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Spiral rings track visual */
+.notebook-rings {
+  position: absolute;
+  top: 5%;
+  left: 14px;
+  bottom: 5%;
+  width: 26px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Spiral metal ring look */
+.ring {
+  width: 32px;
+  height: 15px;
+  background: linear-gradient(135deg, #e0e0dc 0%, #a8a8a4 50%, #7e7e7a 100%);
+  border: 2px solid var(--v-ink);
+  border-radius: 6px;
+  box-shadow: 2px 3px 0px rgba(0,0,0,0.15);
+  transform: rotate(-8deg);
+  flex-shrink: 0;
+}
+
+/* Tilted Red Graded Stamp */
+.graded-stamp {
+  position: absolute;
+  top: 25px;
+  right: 25px;
+  border: 3.5px dashed var(--v-accent);
+  color: var(--v-accent);
+  padding: 4px 10px;
+  font-family: 'Special Elite', cursive;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+  transform: rotate(14deg);
+  opacity: 0.88;
+  letter-spacing: 1px;
+  z-index: 100;
+  pointer-events: auto;
+  user-select: none;
+  background: rgba(255, 255, 255, 0.9);
+  transition: transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.graded-stamp:hover {
+  transform: rotate(-8deg) scale(1.15);
+  color: #a93244;
+  border-color: #a93244;
+}
+
+.graded-stamp .stamp-text {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 2px 0;
+}
+
+.graded-stamp .stamp-stars {
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+}
+
+.graded-stamp .stamp-sub {
+  font-size: 0.52rem;
+  border-top: 1.5px solid var(--v-accent);
+  padding-top: 2px;
+  margin-top: 2px;
+}
+
+@media (max-width: 768px) {
+  .student-input-panel, .student-comic-canvas {
+    padding-left: 1.5rem !important;
+  }
+  .student-input-panel::before, .student-comic-canvas::before {
+    display: none;
+  }
+  .notebook-rings {
+    display: none;
+  }
+}
+
+/* --- VINTAGE WORKBOOK CUSTOM ANNOTATIONS & DETAILS --- */
+
+.handwritten {
+  font-family: 'Caveat', cursive;
+  font-size: 1.35rem;
+  color: #1a365d; /* Ink blue */
+  letter-spacing: 0.5px;
+  line-height: 1.25;
+}
+
+.workbook-header-plate {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24px;
+  margin: 1.5rem auto 0 auto;
+  padding: 12px 24px;
+  border: 2px dashed rgba(112, 66, 20, 0.3);
+  border-radius: 8px;
+  background: rgba(250, 246, 235, 0.65);
+  max-width: 800px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.workbook-header-plate .field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Special Elite', cursive;
+  font-size: 0.85rem;
+  color: var(--v-ink);
+}
+
+.workbook-header-plate .label {
+  font-weight: bold;
+  letter-spacing: 1px;
+  opacity: 0.8;
+}
+
+.workbook-header-plate .value.handwritten {
+  font-size: 1.45rem;
+  color: #1e3a8a; /* Red ink / blue ink mix */
+  transform: rotate(-1deg);
+  display: inline-block;
+  border-bottom: 1px solid rgba(30, 58, 138, 0.2);
+  padding: 0 8px;
+}
+
+/* Floating handwritten sticky note annotation */
+.vintage-sticky-note {
+  position: absolute;
+  top: -30px;
+  right: -50px;
+  width: 230px;
+  background: #fef08a; /* Warm yellow sticky post-it */
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 20px 14px 14px 14px;
+  box-shadow: 4px 10px 24px rgba(0, 0, 0, 0.08), 
+              inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  transform: rotate(3deg);
+  z-index: 100;
+  transition: var(--transition-smooth);
+}
+
+.vintage-sticky-note:hover {
+  transform: rotate(-2deg) scale(1.05) translateY(-5px);
+  box-shadow: 6px 14px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* Small blue push pin visual at the top */
+.sticky-pin {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: rgba(139, 38, 53, 0.85); /* Crimson red push pin */
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(250, 246, 235, 0.9);
+}
+
+.sticky-pin::after {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 5px;
+  width: 4px;
+  height: 8px;
+  background: #a8a8a4;
+  transform: rotate(15deg);
+}
+
+.vintage-sticky-note p {
+  font-family: 'Caveat', cursive;
+  font-size: 1.25rem;
+  line-height: 1.3;
+  color: #1e3a8a; /* Blue ink */
+  margin: 0;
+  text-transform: none; /* Keep natural case */
+}
+
+.vintage-sticky-note .notebook-doodle {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-size: 1.1rem;
+  color: var(--v-accent);
+  opacity: 0.6;
+}
+
+/* Handwritten Teacher's Feedback note overlay */
+.handwritten-feedback {
+  position: absolute;
+  top: 75px;
+  right: 50px;
+  transform: rotate(-6deg);
+  z-index: 95;
+  pointer-events: none;
+  animation: feedback-appear 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+}
+
+.handwritten-feedback .handwritten {
+  font-size: 1.6rem;
+  color: #c2410c; /* Red grading ink */
+  font-family: 'Caveat', cursive;
+  border: 1px solid transparent;
+  padding: 4px 12px;
+  display: inline-block;
+  text-shadow: 0.5px 0.5px 1px rgba(194, 65, 12, 0.15);
+}
+
+@keyframes feedback-appear {
+  from {
+    transform: scale(0.6) rotate(-25deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(-6deg);
+    opacity: 0.9;
+  }
+}
+
+@media (max-width: 1200px) {
+  .vintage-sticky-note {
+    position: relative;
+    top: 0;
+    right: 0;
+    width: 100%;
+    transform: none;
+    margin-bottom: 1.5rem;
+  }
+  .vintage-sticky-note:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* Audio toggle button in header */
+.btn-audio-toggle {
+  font-family: 'Special Elite', cursive;
+  font-size: 0.85rem;
+  color: var(--v-ink);
+  background: var(--v-cream);
+  border: 2px solid var(--v-ink);
+  padding: 4px 12px;
+  cursor: pointer;
+  box-shadow: 3px 3px 0px var(--v-ink);
+  transition: var(--transition-smooth);
+}
+
+.btn-audio-toggle:hover {
+  background: var(--v-paper);
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--v-ink);
+}
+
+.btn-audio-toggle:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--v-ink);
+}
+
+.btn-audio-toggle.playing {
+  background: var(--v-accent);
+  color: var(--v-cream);
 }
