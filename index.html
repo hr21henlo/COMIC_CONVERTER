@@ -5,12 +5,11 @@
     <link rel="icon" type="image/png" href="./comicGEN favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ComicGen | Article to Comic Converter</title>
-    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
     <meta name="description" content="Transform long articles into stunning visual comic strips using AI." />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.run https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://ai.api.nvidia.com;">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&family=Luckiest+Guy&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body>
@@ -141,24 +140,9 @@
       })();
     </script>
 
-    <div id="app">
-      <header class="comic-header-bar">
-        <div class="logo">
-          <img src="./comicGEN sticker.png" class="logo-sticker" alt="ComicGen Logo" />
-        </div>
-        <div class="header-actions">
-          <!-- Retro Comic Code Badge -->
-          <div class="comic-code-badge">
-            <div class="badge-inner">
-              <span>★ APPROVED ★</span>
-              <strong>COMIC</strong>
-              <span>CODE</span>
-              <span class="auth">AUTHORITY</span>
-            </div>
-          </div>
-        </div>
-      </header>
+    <header class="comic-header-bar"></header>
 
+    <div id="app">
       <main>
         
         <!-- AI Visual News Hub Section -->
@@ -308,14 +292,14 @@
                 <div class="status-content">
                   <div id="statusText">BREWING YOUR COMIC STRIP...</div>
                   <div id="mainLoader" style="width: 140px; height: 140px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
-                    <lottie-player 
-                      src="./loading.json" 
-                      background="transparent" 
-                      speed="1" 
-                      style="width: 100%; height: 100%;" 
-                      loop 
-                      autoplay>
-                    </lottie-player>
+                    <div class="retro-loader">
+                      <div class="spinner-inner">
+                        <div class="orbiting-ball cyan"></div>
+                        <div class="orbiting-ball magenta"></div>
+                        <div class="orbiting-ball yellow"></div>
+                        <div class="center-star">★</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -408,7 +392,17 @@
         </div>
       </footer>
     </div>
- 
+
+    <!-- Floating approved stamp in the bottom-left corner, redirects to standalone student page -->
+    <a href="./student.html" class="comic-code-badge" style="text-decoration: none;">
+      <div class="badge-inner">
+        <span>★ APPROVED ★</span>
+        <strong>COMIC</strong>
+        <span>CODE</span>
+        <span class="auth">AUTHORITY</span>
+      </div>
+    </a>
+
     <script type="module" src="/main.js"></script>
   </body>
 </html>

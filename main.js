@@ -2,6 +2,7 @@
 // In index.html: <script type="importmap">...</script>
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { gsap } from "gsap";
+import html2canvas from "html2canvas";
 
 console.log("🎨 ComicGen initialized...");
 
@@ -36,6 +37,7 @@ const statusText = document.getElementById('statusText');
 const mainLoader = document.getElementById('mainLoader');
 const demoBtn = document.getElementById('demoBtn');
 
+const comicPage = document.getElementById('comicPage');
 const newsCard = document.getElementById('newsCard');
 const newsCardHeadline = document.getElementById('newsCardHeadline');
 const newsCardImgContainer = document.getElementById('newsCardImgContainer');
@@ -44,6 +46,8 @@ const newsCardBrief2 = document.getElementById('newsCardBrief2');
 const downloadBtn = document.getElementById('downloadBtn');
 const shareBtn = document.getElementById('shareBtn');
 const finalActions = document.querySelector('.final-actions');
+
+
 
 // State
 let generatedImageUrl = null;
@@ -422,37 +426,96 @@ function resetUI() {
 }
 
 // Download Button
-downloadBtn.addEventListener('click', () => {
-    if (!generatedImageUrl) return;
-    const link = document.createElement('a');
-    link.href = generatedImageUrl;
-    link.download = `ComicGen_NewsCard_${Date.now()}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+downloadBtn.addEventListener('click', async () => {
+    if (downloadBtn.disabled) return;
+    const originalText = downloadBtn.innerText;
+    downloadBtn.innerText = "PREPARING CARD...";
+    downloadBtn.disabled = true;
+
+    try {
+        await document.fonts.ready;
+        const canvas = await html2canvas(comicPage, {
+            useCORS: true,
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = `ComicGen_NewsCard_${Date.now()}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch (err) {
+        console.error("Card download failed:", err);
+        alert("Failed to download the card image.");
+    } finally {
+        downloadBtn.innerText = originalText;
+        downloadBtn.disabled = false;
+    }
 });
+
+// Helper promise wrapper for canvas to Blob conversion
+const getBlobFromCanvas = (canvas) => {
+    return new Promise((resolve) => {
+        canvas.toBlob((blob) => {
+            resolve(blob);
+        }, 'image/png');
+    });
+};
 
 // Share Button
 shareBtn.addEventListener('click', async () => {
-    if (!generatedImageUrl) return;
+    if (shareBtn.disabled) return;
+    const originalText = shareBtn.innerText;
+    shareBtn.innerText = "PREPARING...";
+    shareBtn.disabled = true;
+
     try {
-        if (navigator.share) {
+        await document.fonts.ready;
+        const canvas = await html2canvas(comicPage, {
+            useCORS: true,
+            scale: 2,
+            backgroundColor: '#ffffff',
+            logging: false
+        });
+        
+        const blob = await getBlobFromCanvas(canvas);
+        if (!blob) {
+            throw new Error("Failed to generate canvas image blob");
+        }
+        
+        const file = new File([blob], `ComicGen_NewsCard_${Date.now()}.png`, { type: 'image/png' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
+                files: [file],
                 title: 'My ComicGen News Card',
-                text: 'Check out this awesome AI generated news card!',
-                url: generatedImageUrl.startsWith('http') ? generatedImageUrl : window.location.href
+                text: 'Check out this awesome AI generated news card!'
             });
         } else {
-            const dummy = document.createElement('input');
-            document.body.appendChild(dummy);
-            dummy.value = window.location.href;
-            dummy.select();
-            document.execCommand('copy');
-            document.body.removeChild(dummy);
-            alert("Application link copied to clipboard! 📋");
+            // Copy website link to clipboard
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+            } catch (clipErr) {
+                const dummy = document.createElement('input');
+                document.body.appendChild(dummy);
+                dummy.value = window.location.href;
+                dummy.select();
+                document.execCommand('copy');
+                document.body.removeChild(dummy);
+            }
+            alert("Application link copied to clipboard! 📋 (Direct image sharing is supported on mobile devices)");
         }
     } catch (err) {
-        console.error("Share failed:", err);
+        if (err.name !== 'AbortError') {
+            console.error("Share failed:", err);
+            alert("Failed to share card: " + err.message);
+        }
+    } finally {
+        shareBtn.innerText = originalText;
+        shareBtn.disabled = false;
     }
 });
 
@@ -1563,5 +1626,3 @@ if (cardLanguageSelect) {
         }
     });
 }
-
-

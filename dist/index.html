@@ -3,15 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/assets/comicGEN%20favicon-CEC2BfvD.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ComicGen | Article to Comic Converter</title>
     <meta name="description" content="Transform long articles into stunning visual comic strips using AI." />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.run; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://ai.api.nvidia.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https://esm.run https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://generativelanguage.googleapis.com https://ai.api.nvidia.com;">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-CL1rV5hE.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CKhcmc_2.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Bangers&family=Luckiest+Guy&display=swap" rel="stylesheet">
+    <script type="module" crossorigin src="/assets/main-Dpem-QqA.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/html2canvas.esm-BkGJSCqr.js">
+    <link rel="stylesheet" crossorigin href="/assets/main-CaWk7m5I.css">
   </head>
   <body>
     <!-- Dynamic Background Pattern Layer -->
@@ -22,28 +23,15 @@
 
     <script>
       (function() {
-        // Random background color
-        const bgPairs = [
-          { primary: '#ffd000', stripe: '#ff9d00' }, // Classic Yellow / Orange
-          { primary: '#00d2ff', stripe: '#009ecc' }, // Electric Cyan / Blue
-          { primary: '#ff007c', stripe: '#d00060' }, // Pop Magenta / Dark Pink
-          { primary: '#05ff80', stripe: '#00b354' }, // Acid Green / Forest
-          { primary: '#a855f7', stripe: '#7e22ce' }, // Cosmic Purple / Deep Violet
-          { primary: '#ff5722', stripe: '#d84315' }, // Action Orange / Dark Orange
-          { primary: '#ff2a2a', stripe: '#c62828' }  // Hero Red / Crimson
-        ];
-        const pair = bgPairs[Math.floor(Math.random() * bgPairs.length)];
         const el = document.getElementById('bgPattern');
         if (el) {
-          el.style.background = `
-            radial-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px),
-            repeating-linear-gradient(-45deg, ${pair.primary}, ${pair.primary} 35px, ${pair.stripe} 35px, ${pair.stripe} 70px)
-          `;
-          el.style.backgroundSize = '18px 18px, auto';
+          el.style.backgroundColor = '#faf9f5';
+          el.style.backgroundImage = 'radial-gradient(rgba(0, 0, 0, 0.08) 2px, transparent 2px)';
+          el.style.backgroundSize = '18px 18px';
 
-          // Scroll-based parallax speed line animation
+          // Scroll-based parallax halftone dot movement
           window.addEventListener('scroll', () => {
-            el.style.transform = `translateX(${window.scrollY * 0.25}px)`;
+            el.style.transform = `translateX(${window.scrollY * 0.15}px)`;
           });
         }
 
@@ -154,30 +142,9 @@
       })();
     </script>
 
+    <header class="comic-header-bar"></header>
+
     <div id="app">
-      <header class="comic-header-bar">
-        <div class="logo">
-          <img src="/assets/comicGEN%20sticker-MTyMexnc.png" class="logo-sticker" alt="ComicGen Logo" />
-        </div>
-        <div class="header-actions">
-          <!-- Retro Comic Sound Toggle -->
-          <button id="soundToggle" class="sound-toggle-btn" aria-label="Toggle Sound Effects">
-            <span class="sound-icon">🔊</span>
-            <span class="sound-text">SOUNDS: ON</span>
-          </button>
-
-          <!-- Retro Comic Code Badge -->
-          <div class="comic-code-badge">
-            <div class="badge-inner">
-              <span>★ APPROVED ★</span>
-              <strong>COMIC</strong>
-              <span>CODE</span>
-              <span class="auth">AUTHORITY</span>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main>
         
         <!-- AI Visual News Hub Section -->
@@ -326,12 +293,15 @@
                 <div class="status-top-bar">STATUS REPORT</div>
                 <div class="status-content">
                   <div id="statusText">BREWING YOUR COMIC STRIP...</div>
-                  <div class="loadingspinner" id="mainLoader">
-                    <div id="square1"></div>
-                    <div id="square2"></div>
-                    <div id="square3"></div>
-                    <div id="square4"></div>
-                    <div id="square5"></div>
+                  <div id="mainLoader" style="width: 140px; height: 140px; margin: 0 auto; display: flex; align-items: center; justify-content: center;">
+                    <div class="retro-loader">
+                      <div class="spinner-inner">
+                        <div class="orbiting-ball cyan"></div>
+                        <div class="orbiting-ball magenta"></div>
+                        <div class="orbiting-ball yellow"></div>
+                        <div class="center-star">★</div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -424,6 +394,16 @@
         </div>
       </footer>
     </div>
- 
+
+    <!-- Floating approved stamp in the bottom-left corner, redirects to standalone student page -->
+    <a href="./student.html" class="comic-code-badge" style="text-decoration: none;">
+      <div class="badge-inner">
+        <span>★ APPROVED ★</span>
+        <strong>COMIC</strong>
+        <span>CODE</span>
+        <span class="auth">AUTHORITY</span>
+      </div>
+    </a>
+
   </body>
 </html>
