@@ -2427,6 +2427,8 @@ textarea:focus {
 }
 
 .news-card-headline {
+  grid-column: 1 / -1;
+  width: 100%;
   font-family: 'Luckiest Guy', cursive;
   font-size: clamp(1.6rem, 3.5vw, 2.4rem);
   letter-spacing: 1.5px;
@@ -2440,7 +2442,7 @@ textarea:focus {
   -webkit-text-stroke: 2.2px var(--c-black);
   text-shadow: 4px 4px 0px var(--c-black);
   transform: rotate(-2deg);
-  margin-bottom: 6px;
+  margin-bottom: 12px;
   line-height: 1.15;
   transition: transform 0.28s var(--comic-bounce), text-shadow 0.25s;
 }
@@ -2479,21 +2481,19 @@ textarea:focus {
 
 .news-card-brief.brief-1 {
   background: var(--c-yellow);
-  transform: rotate(-1deg);
 }
 
 .news-card-brief.brief-1:hover {
-  transform: scale(1.02) rotate(0.5deg);
+  transform: scale(1.02);
   box-shadow: 6px 6px 0px var(--c-black);
 }
 
 .news-card-brief.brief-2 {
   background: var(--c-cyan);
-  transform: rotate(1deg);
 }
 
 .news-card-brief.brief-2:hover {
-  transform: scale(1.02) rotate(-0.5deg);
+  transform: scale(1.02);
   box-shadow: 6px 6px 0px var(--c-black);
 }
 

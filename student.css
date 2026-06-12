@@ -71,11 +71,50 @@ body {
 }
 
 .header-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
-  font-weight: 700;
-  letter-spacing: 1.5px;
+  font-family: 'Special Elite', cursive;
+  font-size: 1.2rem;
+  letter-spacing: 1px;
   color: var(--v-ink);
+}
+
+/* Scroll Down Indicator & Bouncing Arrow */
+.scroll-down-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 1.5rem 0;
+  width: 100%;
+}
+
+.btn-scroll-down {
+  background: var(--v-paper);
+  border: 2px solid var(--v-ink);
+  padding: 8px 18px;
+  font-family: 'Special Elite', cursive;
+  font-size: 0.85rem;
+  color: var(--v-ink);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 4px 4px 0px var(--v-ink);
+  transition: var(--transition-smooth);
+}
+
+.btn-scroll-down:hover {
+  background: var(--v-yellow);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px var(--v-ink);
+}
+
+.btn-scroll-down:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--v-ink);
+}
+
+.btn-scroll-down svg {
+  display: inline-block;
+  will-change: transform;
 }
 
 /* Main App Wrapper */

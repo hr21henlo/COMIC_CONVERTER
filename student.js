@@ -20,6 +20,8 @@ const studentComicCanvas = document.getElementById('studentComicCanvas');
 const studentComicTitle = document.getElementById('studentComicTitle');
 const studentDownloadBtn = document.getElementById('studentDownloadBtn');
 const studentShareBtn = document.getElementById('studentShareBtn');
+const studentScrollIndicator = document.getElementById('studentScrollIndicator');
+const studentScrollBtn = document.getElementById('studentScrollBtn');
 
 // Initialize Gemini
 let genAI = null;
@@ -40,10 +42,30 @@ function playEntranceAnimations() {
     { opacity: [0, 1], y: [30, 0] }, 
     { duration: 0.8, delay: 0.15, easing: "ease-out" }
   );
+
+  // Continuous bouncing cute down arrow animation
+  if (studentScrollBtn) {
+    animate(".btn-scroll-down svg", 
+      { y: [0, 5, 0] }, 
+      { duration: 1.2, repeat: Infinity, easing: "ease-in-out" }
+    );
+  }
 }
 
 // Play initial page entrance transitions
 playEntranceAnimations();
+
+// Scroll down to active indicator panel smoothly
+if (studentScrollBtn) {
+    studentScrollBtn.addEventListener('click', () => {
+        const target = studentLoadingPanel.style.display !== 'none'
+            ? studentLoadingPanel
+            : studentOutputSection;
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+}
 
 
 // ---------------- GENERATION CONTROLLERS ----------------
@@ -236,6 +258,14 @@ studentGenerateBtn.addEventListener('click', async () => {
     toggleStudentLoading(true);
     resetStudentUI();
 
+    if (studentScrollIndicator) {
+        studentScrollIndicator.style.display = 'flex';
+        animate("#studentScrollIndicator", 
+            { opacity: [0, 1], y: [15, 0] }, 
+            { duration: 0.5, easing: "ease-out" }
+        );
+    }
+
     try {
         const studentStyle = document.querySelector('input[name="studentStyle"]:checked').value;
         
@@ -356,12 +386,23 @@ function resetStudentUI() {
         document.getElementById(`studentCaption${i}`).innerText = `NARRATIVE PORTION ${i}...`;
     }
     studentOutputSection.style.display = 'none';
+    if (studentScrollIndicator) {
+        studentScrollIndicator.style.display = 'none';
+    }
 }
 
 // Student Demo Mode Handler
 studentDemoBtn.addEventListener('click', async () => {
     toggleStudentLoading(true);
     resetStudentUI();
+    
+    if (studentScrollIndicator) {
+        studentScrollIndicator.style.display = 'flex';
+        animate("#studentScrollIndicator", 
+            { opacity: [0, 1], y: [15, 0] }, 
+            { duration: 0.5, easing: "ease-out" }
+        );
+    }
     
     updateStudentStatus("Demo Mode: Scanning academic references...", 25);
     await new Promise(resolve => setTimeout(resolve, 1200));
@@ -399,11 +440,10 @@ studentDemoBtn.addEventListener('click', async () => {
     toggleStudentLoading(false);
 });
 
-// Student Download Action
 studentDownloadBtn.addEventListener('click', async () => {
     if (studentDownloadBtn.disabled) return;
     const originalText = studentDownloadBtn.innerText;
-    studentDownloadBtn.innerText = "PREPARING STRIP...";
+    studentDownloadBtn.innerText = "PREPARING STUDY CARDS...";
     studentDownloadBtn.disabled = true;
 
     try {
@@ -417,7 +457,7 @@ studentDownloadBtn.addEventListener('click', async () => {
         const dataUrl = canvas.toDataURL('image/png');
         const link = document.createElement('a');
         link.href = dataUrl;
-        link.download = `ComicGen_StudentChronicle_${Date.now()}.png`;
+        link.download = `ComicGen_StudentStudyCards_${Date.now()}.png`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

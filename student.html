@@ -24,10 +24,8 @@
         <!-- Welcome Board -->
         <section class="welcome-board">
           <div class="news-header">
-            <div class="speech-bubble-sticker left-bubble">HISTORY CLASS!</div>
-            <h1 class="student-page-title">HISTORICAL CHRONICLE FORGE</h1>
-            <div class="speech-bubble-sticker right-bubble">VISUALIZE!</div>
-            <p class="section-subtitle">TRANSFORM HEAVY TEXTBOOK PARAGRAPHS OR HUMANITIES CHAPTERS INTO AN ELEGANT 3-PANEL COMIC STRIP</p>
+            <h1 class="student-page-title">VISUAL STUDY CARD COMPANION</h1>
+            <p class="section-subtitle">A creative visualizer built specifically for students to master subjects like history, civics, geography, political science, and humanities. Turn dense textbook readings into 3-panel study cards to download, share, and retain key concepts instantly!</p>
           </div>
         </section>
 
@@ -65,11 +63,11 @@
               </label>
               
               <label class="style-card custom">
-                <input type="radio" name="studentStyle" value="custom characters" />
+                <input type="radio" name="studentStyle" value="graphical design style" />
                 <div class="style-card-content">
-                  <div class="style-badge">HYBRID</div>
-                  <div class="style-name">AI FREESTYLE</div>
-                  <div class="style-desc">Dynamic multi-layered painting</div>
+                  <div class="style-badge">GRAPHIC</div>
+                  <div class="style-name">GRAPHICAL STYLE</div>
+                  <div class="style-desc">Sleek vector layouts and clean lines</div>
                 </div>
               </label>
             </div>
@@ -89,6 +87,16 @@
               </div>
             </div>
           </section>
+
+          <!-- Scroll Down Indicator (appears after clicking Forge) -->
+          <div id="studentScrollIndicator" class="scroll-down-indicator" style="display: none;">
+            <button id="studentScrollBtn" class="btn-scroll-down" aria-label="Scroll to output">
+              <span>SCROLL TO STUDY CARDS</span>
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z"/>
+              </svg>
+            </button>
+          </div>
 
           <!-- Loading Panel using CMYK spinner -->
           <section id="studentLoadingPanel" class="status-indicator-panel" style="display: none;">
@@ -146,7 +154,7 @@
 
             <!-- Actions -->
             <div class="final-actions">
-              <button id="studentDownloadBtn" class="btn-secondary-action download">DOWNLOAD STRIP</button>
+              <button id="studentDownloadBtn" class="btn-secondary-action download">DOWNLOAD STUDY CARDS</button>
               <button id="studentShareBtn" class="btn-ghost-action share">SHARE</button>
             </div>
           </section>
