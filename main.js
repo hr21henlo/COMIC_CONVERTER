@@ -38,11 +38,11 @@ const mainLoader = document.getElementById('mainLoader');
 const demoBtn = document.getElementById('demoBtn');
 
 const comicPage = document.getElementById('comicPage');
-const newsCard = document.getElementById('newsCard');
-const newsCardHeadline = document.getElementById('newsCardHeadline');
-const newsCardImgContainer = document.getElementById('newsCardImgContainer');
-const newsCardBrief1 = document.getElementById('newsCardBrief1');
-const newsCardBrief2 = document.getElementById('newsCardBrief2');
+let newsCard = document.getElementById('newsCard');
+let newsCardHeadline = document.getElementById('newsCardHeadline');
+let newsCardImgContainer = document.getElementById('newsCardImgContainer');
+let newsCardBrief1 = document.getElementById('newsCardBrief1');
+let newsCardBrief2 = document.getElementById('newsCardBrief2');
 const downloadBtn = document.getElementById('downloadBtn');
 const shareBtn = document.getElementById('shareBtn');
 const finalActions = document.querySelector('.final-actions');
@@ -76,40 +76,50 @@ generateBtn.addEventListener('click', async () => {
     // Start Generation
     toggleLoading(true);
     resetUI();
-
     try {
         const characterStyle = document.querySelector('input[name="characterStyle"]:checked').value;
+        const cardCount = parseInt(document.querySelector('input[name="cardCount"]:checked')?.value || '1', 10);
+        
         // Step 1: Generate News Card script with Gemini
         updateStatus("Editor: Slicing article into a dramatic comic layout...", 20);
-        const cardData = await generateNewsCard(article, characterStyle);
+        const cardData = await generateNewsCard(article, characterStyle, cardCount);
         
-        if (!cardData || !cardData.headline || !cardData.brief1 || !cardData.brief2 || !cardData.imagePrompt) {
+        const cards = cardData.cards || [cardData];
+        
+        if (!cards || cards.length === 0) {
             throw new Error("Failed to generate news card data. Please try again.");
+        }
+        for (const card of cards) {
+            if (!card.headline || !card.brief1 || !card.brief2 || !card.imagePrompt) {
+                throw new Error("Failed to generate news card data. Please try again.");
+            }
         }
 
         updateStatus("Artist: Prepping card canvas...", 40);
-        renderPlaceholderCard(cardData);
+        renderPlaceholderCards(cards);
 
         // Cache original text for translations
-        originalCardTexts = {
-            headline: cardData.headline,
-            brief1: cardData.brief1,
-            brief2: cardData.brief2
-        };
+        originalCardTexts = cards.map(c => ({
+            headline: c.headline,
+            brief1: c.brief1,
+            brief2: c.brief2
+        }));
         translationCache = {};
         const langSelect = document.getElementById('cardLanguageSelect');
         if (langSelect) langSelect.value = 'en';
 
-        // Step 2: Generate single image with Flux (Nvidia API)
-        try {
-            updateStatus("Artist: Sketching the single visual masterpiece...", 65);
-            const imageUrl = await generateImage(cardData.imagePrompt, characterStyle, cardData.headline);
-            
-            updateStatus("Artist: Finalizing card details...", 90);
-            updateCardImage(imageUrl);
-        } catch (err) {
-            console.error("Error generating card image:", err);
-            updateCardError(err.message);
+        // Step 2: Generate images with Flux (Nvidia API)
+        for (let i = 0; i < cards.length; i++) {
+            const card = cards[i];
+            try {
+                updateStatus(`Artist: Sketching panel ${i + 1} of ${cards.length}...`, 50 + (i / cards.length) * 45);
+                const imageUrl = await generateImage(card.imagePrompt, characterStyle, card.headline);
+                
+                updateCardImageAtIndex(i, imageUrl, cards.length);
+            } catch (err) {
+                console.error(`Error generating card image ${i + 1}:`, err);
+                updateCardErrorAtIndex(i, err.message);
+            }
         }
 
         updateStatus("Masterpiece Complete!", 100);
@@ -318,13 +328,40 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
     }
 }
 
-function renderPlaceholderCard(cardData) {
-    newsCardHeadline.innerText = cardData.headline.toUpperCase();
-    newsCardBrief1.innerText = cardData.brief1;
-    newsCardBrief2.innerText = cardData.brief2;
+function renderPlaceholderCards(cards) {
+    const cardsWorkspace = document.getElementById('cardsWorkspace');
+    if (!cardsWorkspace) return;
     
-    newsCardImgContainer.className = 'news-card-img-container loading-state';
-    newsCardImgContainer.innerHTML = '<div class="skeleton-img"></div>';
+    cardsWorkspace.innerHTML = '';
+    
+    cards.forEach((card, index) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'news-card';
+        cardDiv.id = `newsCard-${index}`;
+        cardDiv.style.marginBottom = index === cards.length - 1 ? '0' : '35px';
+        
+        // Alternating slight rotations
+        const rotationVal = index % 3 === 0 ? '-0.5deg' : (index % 3 === 1 ? '0.6deg' : '-0.3deg');
+        cardDiv.style.transform = `rotate(${rotationVal})`;
+        
+        cardDiv.innerHTML = `
+            <h3 class="news-card-headline" id="newsCardHeadline-${index}">${card.headline.toUpperCase()}</h3>
+            <div class="news-card-left">
+                <div class="news-card-img-container loading-state" id="newsCardImgContainer-${index}">
+                    <div class="skeleton-img"></div>
+                </div>
+            </div>
+            <div class="news-card-right" style="display: flex; flex-direction: column; gap: 16px;">
+                <div class="news-card-brief" id="newsCardBrief1-${index}">${card.brief1}</div>
+                <div class="news-card-brief" id="newsCardBrief2-${index}">${card.brief2}</div>
+            </div>
+        `;
+        cardsWorkspace.appendChild(cardDiv);
+    });
+    
+    if (comicPage) {
+        comicPage.style.display = 'block';
+    }
     
     finalActions.style.display = 'none';
 }
@@ -343,14 +380,14 @@ demoBtn.addEventListener('click', async () => {
         imagePrompt: "SpaceX Starship landed on Mars"
     };
 
-    renderPlaceholderCard(fakeCard);
+    renderPlaceholderCards([fakeCard]);
 
     // Cache original text for translations
-    originalCardTexts = {
+    originalCardTexts = [{
         headline: fakeCard.headline,
         brief1: fakeCard.brief1,
         brief2: fakeCard.brief2
-    };
+    }];
     translationCache = {};
     const langSelect = document.getElementById('cardLanguageSelect');
     if (langSelect) langSelect.value = 'en';
@@ -360,29 +397,38 @@ demoBtn.addEventListener('click', async () => {
     
     updateStatus("Demo Mode: Finalizing design...", 90);
     const demoImgUrl = `https://picsum.photos/seed/${Math.random()}/1024/1024`;
-    updateCardImage(demoImgUrl);
+    updateCardImageAtIndex(0, demoImgUrl, 1);
 
     updateStatus("Demo Layout Complete!", 100);
     toggleLoading(false);
 });
 
-function updateCardImage(imageUrl) {
-    const skeleton = newsCardImgContainer.querySelector('.skeleton-img');
+function updateCardImageAtIndex(index, imageUrl, total) {
+    const imgContainer = document.getElementById(`newsCardImgContainer-${index}`);
+    if (!imgContainer) return;
+    
+    const skeleton = imgContainer.querySelector('.skeleton-img');
     const imgSrc = imageUrl.startsWith('http') ? imageUrl : `data:image/png;base64,${imageUrl}`;
     
-    // Cache for download action
-    generatedImageUrl = imgSrc;
+    // Cache the first image URL (fallback for any legacy usage or single card checks)
+    if (index === 0) {
+        generatedImageUrl = imgSrc;
+    }
 
     const img = document.createElement('img');
+    img.className = 'img';
     img.src = imgSrc;
     img.onload = () => {
-        newsCardImgContainer.classList.remove('loading-state');
+        imgContainer.classList.remove('loading-state');
         if (skeleton) skeleton.remove();
-        newsCardImgContainer.innerHTML = '';
-        newsCardImgContainer.appendChild(img);
+        imgContainer.innerHTML = '';
+        imgContainer.appendChild(img);
         
-        // Show download/share buttons
-        finalActions.style.display = 'flex';
+        // Show download/share buttons if all panels are loaded
+        const activeLoaders = document.querySelectorAll('.news-card-img-container.loading-state');
+        if (activeLoaders.length === 0) {
+            finalActions.style.display = 'flex';
+        }
 
         // Springy entrance for the card image
         gsap.fromTo(img, 
@@ -392,17 +438,27 @@ function updateCardImage(imageUrl) {
     };
 }
 
-function updateCardError(errorMessage = "") {
-    newsCardImgContainer.classList.remove('loading-state');
-    newsCardImgContainer.classList.add('error-state');
+function updateCardErrorAtIndex(index, errorMessage = "") {
+    const imgContainer = document.getElementById(`newsCardImgContainer-${index}`);
+    if (!imgContainer) return;
+    
+    imgContainer.classList.remove('loading-state');
+    imgContainer.classList.add('error-state');
     
     let displayMessage = "⚠️ Failed to generate image";
     if (errorMessage && errorMessage.toLowerCase().includes("policy violation")) {
         displayMessage = "⚠️ Content policy violation";
     }
     
-    newsCardImgContainer.innerHTML = `<div class="error-text" style="display: flex; align-items: center; justify-content: center; height: 100%; font-family: 'Bangers', cursive; font-size: 1.4rem; color: var(--c-red);">${displayMessage}</div>`;
+    imgContainer.innerHTML = `<div class="error-text" style="display: flex; align-items: center; justify-content: center; height: 100%; font-family: 'Bangers', cursive; font-size: 1.4rem; color: var(--c-red);">${displayMessage}</div>`;
+
+    // Show download/share buttons if all panels are finished (even with errors)
+    const activeLoaders = document.querySelectorAll('.news-card-img-container.loading-state');
+    if (activeLoaders.length === 0) {
+        finalActions.style.display = 'flex';
+    }
 }
+
 
 function toggleLoading(isLoading) {
     generateBtn.disabled = isLoading;
@@ -433,14 +489,17 @@ function updateStatus(text, progress) {
 }
 
 function resetUI() {
-    newsCardHeadline.innerText = "BREWING HEADLINE...";
-    newsCardBrief1.innerText = "BREWING SHORT STORY PART 1...";
-    newsCardBrief2.innerText = "BREWING SHORT STORY PART 2...";
-    newsCardImgContainer.innerHTML = '';
-    newsCardImgContainer.className = 'news-card-img-container';
+    const cardsWorkspace = document.getElementById('cardsWorkspace');
+    if (cardsWorkspace) {
+        cardsWorkspace.innerHTML = '';
+    }
+    if (comicPage) {
+        comicPage.style.display = 'none';
+    }
     finalActions.style.display = 'none';
     generatedImageUrl = null;
 }
+
 
 // Download Button
 downloadBtn.addEventListener('click', async () => {
@@ -1579,66 +1638,109 @@ const cardLanguageSelect = document.getElementById('cardLanguageSelect');
 if (cardLanguageSelect) {
     cardLanguageSelect.addEventListener('change', async (e) => {
         const targetLang = e.target.value;
-        if (!originalCardTexts) return;
+        if (!originalCardTexts || originalCardTexts.length === 0) return;
         
+        const total = originalCardTexts.length;
+
         // If English is selected, restore instantly
         if (targetLang === 'en') {
-            newsCardHeadline.innerText = originalCardTexts.headline.toUpperCase();
-            newsCardBrief1.innerText = originalCardTexts.brief1;
-            newsCardBrief2.innerText = originalCardTexts.brief2;
+            for (let i = 0; i < total; i++) {
+                const headlineEl = document.getElementById(`newsCardHeadline-${i}`);
+                const brief1El = document.getElementById(`newsCardBrief1-${i}`);
+                const brief2El = document.getElementById(`newsCardBrief2-${i}`);
+                if (headlineEl) headlineEl.innerText = originalCardTexts[i].headline.toUpperCase();
+                if (brief1El) brief1El.innerText = originalCardTexts[i].brief1;
+                if (brief2El) brief2El.innerText = originalCardTexts[i].brief2;
+            }
             return;
         }
         
         // Check cache first
         if (translationCache[targetLang]) {
             console.log(`⚡ Translation cache hit for language: ${targetLang}`);
-            const cached = translationCache[targetLang];
-            newsCardHeadline.innerText = cached.headline.toUpperCase();
-            newsCardBrief1.innerText = cached.brief1;
-            newsCardBrief2.innerText = cached.brief2;
+            const cachedArray = translationCache[targetLang];
+            for (let i = 0; i < total; i++) {
+                const headlineEl = document.getElementById(`newsCardHeadline-${i}`);
+                const brief1El = document.getElementById(`newsCardBrief1-${i}`);
+                const brief2El = document.getElementById(`newsCardBrief2-${i}`);
+                if (headlineEl && cachedArray[i]) headlineEl.innerText = cachedArray[i].headline.toUpperCase();
+                if (brief1El && cachedArray[i]) brief1El.innerText = cachedArray[i].brief1;
+                if (brief2El && cachedArray[i]) brief2El.innerText = cachedArray[i].brief2;
+            }
             return;
         }
         
-        // Apply visual brewing states to text elements
-        const origHeadlineHtml = newsCardHeadline.innerHTML;
-        const origBrief1Html = newsCardBrief1.innerHTML;
-        const origBrief2Html = newsCardBrief2.innerHTML;
-        
-        newsCardHeadline.innerText = "TRANSLATING...";
-        newsCardBrief1.innerText = "TRANSLATING...";
-        newsCardBrief2.innerText = "TRANSLATING...";
+        // Save original HTML in case of error
+        const origValues = [];
+        for (let i = 0; i < total; i++) {
+            const headlineEl = document.getElementById(`newsCardHeadline-${i}`);
+            const brief1El = document.getElementById(`newsCardBrief1-${i}`);
+            const brief2El = document.getElementById(`newsCardBrief2-${i}`);
+            
+            origValues.push({
+                headlineHtml: headlineEl ? headlineEl.innerHTML : '',
+                brief1Html: brief1El ? brief1El.innerHTML : '',
+                brief2Html: brief2El ? brief2El.innerHTML : ''
+            });
+
+            if (headlineEl) headlineEl.innerText = "TRANSLATING...";
+            if (brief1El) brief1El.innerText = "TRANSLATING...";
+            if (brief2El) brief2El.innerText = "TRANSLATING...";
+        }
         
         try {
-            // Translate all three in parallel
-            const [transHeadline, transBrief1, transBrief2] = await Promise.all([
-                translateText(originalCardTexts.headline, targetLang),
-                translateText(originalCardTexts.brief1, targetLang),
-                translateText(originalCardTexts.brief2, targetLang)
-            ]);
+            const promises = [];
+            for (let i = 0; i < total; i++) {
+                const card = originalCardTexts[i];
+                promises.push(
+                    translateText(card.headline, targetLang),
+                    translateText(card.brief1, targetLang),
+                    translateText(card.brief2, targetLang)
+                );
+            }
             
-            // Render results
-            newsCardHeadline.innerText = transHeadline.toUpperCase();
-            newsCardBrief1.innerText = transBrief1;
-            newsCardBrief2.innerText = transBrief2;
+            const results = await Promise.all(promises);
+            const cachedArray = [];
             
-            // Store in cache
-            translationCache[targetLang] = {
-                headline: transHeadline,
-                brief1: transBrief1,
-                brief2: transBrief2
-            };
+            for (let i = 0; i < total; i++) {
+                const transHeadline = results[i * 3];
+                const transBrief1 = results[i * 3 + 1];
+                const transBrief2 = results[i * 3 + 2];
+                
+                const headlineEl = document.getElementById(`newsCardHeadline-${i}`);
+                const brief1El = document.getElementById(`newsCardBrief1-${i}`);
+                const brief2El = document.getElementById(`newsCardBrief2-${i}`);
+                
+                if (headlineEl) headlineEl.innerText = transHeadline.toUpperCase();
+                if (brief1El) brief1El.innerText = transBrief1;
+                if (brief2El) brief2El.innerText = transBrief2;
+                
+                cachedArray.push({
+                    headline: transHeadline,
+                    brief1: transBrief1,
+                    brief2: transBrief2
+                });
+            }
+            
+            translationCache[targetLang] = cachedArray;
             
         } catch (error) {
             console.error("Translation failed:", error);
             alert(`Translation failed: ${error.message}`);
             
             // Restore original values
-            newsCardHeadline.innerHTML = origHeadlineHtml;
-            newsCardBrief1.innerHTML = origBrief1Html;
-            newsCardBrief2.innerHTML = origBrief2Html;
+            for (let i = 0; i < total; i++) {
+                const headlineEl = document.getElementById(`newsCardHeadline-${i}`);
+                const brief1El = document.getElementById(`newsCardBrief1-${i}`);
+                const brief2El = document.getElementById(`newsCardBrief2-${i}`);
+                
+                if (headlineEl) headlineEl.innerHTML = origValues[i].headlineHtml;
+                if (brief1El) brief1El.innerHTML = origValues[i].brief1Html;
+                if (brief2El) brief2El.innerHTML = origValues[i].brief2Html;
+            }
             
-            // Reset select option back to 'en'
             e.target.value = 'en';
         }
     });
 }
+

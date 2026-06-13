@@ -41,7 +41,7 @@
         }
       }
     </style>
-    <script type="module" crossorigin src="/assets/main-rV71hbjo.js"></script>
+    <script type="module" crossorigin src="/assets/main-CK0ag_pN.js"></script>
     <link rel="modulepreload" crossorigin href="/assets/html2canvas.esm-DIa_aVMa.js">
     <link rel="stylesheet" crossorigin href="/assets/main-DL778lji.css">
   </head>
@@ -769,7 +769,35 @@
                 </label>
               </div>
  
-              <h4 class="input-title"><span>2. WRITE THE SCENARIO</span></h4>
+              <h4 class="input-title"><span>2. CHOOSE NUMBER OF CARDS</span></h4>
+              <div class="style-selector-grid" id="cardCountGrid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2.2rem;">
+                <label class="style-card card-count-btn">
+                  <input type="radio" name="cardCount" value="1" checked="checked" />
+                  <div class="style-card-content">
+                    <div class="style-badge">MINIMAL</div>
+                    <div class="style-name">1 CARD</div>
+                    <div class="style-desc">Focussed, high-level overview</div>
+                  </div>
+                </label>
+                <label class="style-card card-count-btn">
+                  <input type="radio" name="cardCount" value="2" />
+                  <div class="style-card-content">
+                    <div class="style-badge">DETAILED</div>
+                    <div class="style-name">2 CARDS</div>
+                    <div class="style-desc">Chronological two-part summary</div>
+                  </div>
+                </label>
+                <label class="style-card card-count-btn">
+                  <input type="radio" name="cardCount" value="3" />
+                  <div class="style-card-content">
+                    <div class="style-badge">COMPLETE</div>
+                    <div class="style-name">3 CARDS</div>
+                    <div class="style-desc">Chronological detailed analysis</div>
+                  </div>
+                </label>
+              </div>
+
+              <h4 class="input-title"><span>3. WRITE THE SCENARIO</span></h4>
               <textarea id="articleInput" placeholder="WRITE YOUR LEGENDARY STORY HERE... (MINIMUM 100 WORDS RECOMMENDED FOR ACTION-PACKED RESULTS)"></textarea>
               
               <div class="action-bar">
@@ -809,25 +837,14 @@
                 </div>
               </div>
               
-              <!-- Comic News Card Page Layout -->
-              <div id="comicPage" class="comic-page-canvas">
-<div id="newsCard" class="news-card">
-                  <div id="newsCardHeadline" class="news-card-headline">BREWING HEADLINE...</div>
-                  <div class="news-card-left">
-                    <div id="newsCardBrief1" class="news-card-brief brief-1">BREWING SHORT STORY PART 1...</div>
-                    <div id="newsCardBrief2" class="news-card-brief brief-2">BREWING SHORT STORY PART 2...</div>
-                  </div>
-                  <div id="newsCardImgContainer" class="news-card-img-container loading-state">
-                    <div class="skeleton-img"></div>
-                  </div>
-                </div>
-                <div class="comic-watermark-overlay">
-                  <img src="/assets/comicGEN%20favicon-CEC2BfvD.png" alt="ComicGen Logo" />
-                  <span>COMICGEN</span>
+              <!-- Comic News Card Page Layout Workspace -->
+              <div id="comicPage" class="comic-page-canvas" style="display: none; width: 100%;">
+                <div id="cardsWorkspace" class="cards-workspace" style="display: flex; flex-direction: column; gap: 45px; width: 100%;">
+                  <!-- Dynamically generated cards will be injected here -->
                 </div>
               </div>
    
-              <div class="final-actions" style="display: none;">
+              <div class="final-actions" style="display: none; justify-content: center; margin-top: 25px;">
                 <div class="translate-selector-wrapper">
                   <select id="cardLanguageSelect" class="btn-secondary-action translate-select">
                     <option value="en">🌐 TRANSLATE: ENGLISH</option>
