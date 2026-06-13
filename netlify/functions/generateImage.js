@@ -120,7 +120,7 @@ function stripRepeatedStyleWrapper(prompt) {
 function buildNvidiaPrompt(prompt, style) {
     const basePrompt = stripRepeatedStyleWrapper(prompt);
     const stylePrefix = style && style !== 'custom characters' ? `Style: ${normalizeText(style)}. ` : '';
-    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized.' : '';
+    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized. Wordless, no text, no letters, no speech bubbles, no dialogue, no labels.' : ' Wordless, no text, no letters, no speech bubbles, no dialogue, no labels.';
     const remaining = Math.max(120, NVIDIA_PROMPT_LIMIT - stylePrefix.length - styleSuffix.length);
     const compactPrompt = shortenText(basePrompt, remaining);
     return `${stylePrefix}${compactPrompt}${styleSuffix}`.trim();

@@ -104,9 +104,10 @@ async function generateStudentComic(text, style) {
            Each panel object MUST contain:
            - "caption": A concise, educational narrator description of the event (exactly 1-2 sentences, approximately 20-30 words) styled like a classic comic narrator's text box.
            - "imagePrompt": A highly descriptive, detailed image prompt representing the historical action described in the caption.
-             CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
-             Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
-             CRITICAL CELEBRITY/HISTORICAL FIGURES RULE: Do NOT use real-world copyrighted public figures or modern celebrity names. Describe historical figures generically (e.g., instead of "Napoleon Bonaparte", use "a short French general in an early 19th-century military uniform with a bicorn hat"; instead of "George Washington", use "a tall American general with powdered hair wearing a blue continental army uniform").
+             - CRITICAL TEXT-FREE SAFETY GUARD: The image prompt must NOT contain or request any words, letters, text, numbers, symbols that look like letters, speech bubbles, talk bubbles, or character dialogue. Explicitly describe a pure visual composition without any text labels or lettering of any kind in the scene.
+             - CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
+               Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
+             - CRITICAL CELEBRITY/HISTORICAL FIGURES RULE: Do NOT use real-world copyrighted public figures or modern celebrity names. Describe historical figures generically (e.g., instead of "Napoleon Bonaparte", use "a short French general in an early 19th-century military uniform with a bicorn hat"; instead of "George Washington", use "a tall American general with powdered hair wearing a blue continental army uniform").
         
         Output MUST be in valid JSON format like this:
         {
@@ -544,7 +545,7 @@ studentShareBtn.addEventListener('click', async () => {
 // Prompt helper utilities
 function buildNvidiaPrompt(prompt, style) {
     const stylePrefix = style && style !== 'custom characters' ? `Style: ${style}. ` : '';
-    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized.' : '';
+    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized. Wordless, no text, no letters, no speech bubbles, no dialogue, no labels.' : ' Wordless, no text, no letters, no speech bubbles, no dialogue, no labels.';
     return `${stylePrefix}${prompt}${styleSuffix}`.trim();
 }
 
@@ -561,7 +562,9 @@ function anonymizePrompt(prompt, style, caption = '') {
         simplifiedPrompt = simplifiedPrompt.replace(r.regex, r.replacement);
     }
     if (caption) {
-        simplifiedPrompt = `A scene entirely in ${style || 'comic'} style. ${caption.substring(0, 150)}. No realistic elements.`;
+        simplifiedPrompt = `A scene entirely in ${style || 'comic'} style. ${caption.substring(0, 150)}. No realistic elements. Completely wordless, no text, no letters, no speech bubbles, no dialogue, no labels.`;
+    } else {
+        simplifiedPrompt = `${simplifiedPrompt}. Completely wordless, no text, no letters, no speech bubbles, no dialogue, no labels.`;
     }
     return simplifiedPrompt;
 }

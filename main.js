@@ -147,12 +147,19 @@ async function generateNewsCard(text, style) {
         You are an elite comic-book editor. Convert the following article into a 1-panel visual News Card.
         Generate the following four fields in JSON format:
         1. "headline": A highly dramatic, punchy comic-book style headline for the top banner of the card.
+           - CRITICAL DATA RETENTION RULE: If the article contains key metrics, stock prices, percentages, ticker symbols, or major numbers, the headline MUST explicitly include these numbers or metrics. Do not genericize or omit them.
         2. "brief1": A dramatic narrative setup of the news story (exactly 1-2 sentences, approximately 20-30 words) styled like a classic comic narrator's text box.
+           - CRITICAL DATA RETENTION RULE: This must be a highly accurate summary of the core facts of the news. You MUST explicitly preserve and include key metrics, numbers, percentages, dates, stock prices, ticker symbols, and specific names from the article. Do not omit or simplify the core details.
         3. "brief2": A dramatic continuation or impact statement of the news story (exactly 1-2 sentences, approximately 20-30 words) styled like a second comic narrator's text box, providing more details.
-        4. "imagePrompt": A detailed, highly descriptive image prompt for an AI image generator representing the core action of the article.
-           CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
-           Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
-           CRITICAL CELEBRITY RULE: Do NOT use real-world celebrity names, specific athletes, or copyrighted public figures in the descriptions, as this triggers the image generator's safety/censorship filters. Instead, describe them generically (e.g., instead of "Cristiano Ronaldo", use "a world-famous athletic Portuguese soccer player wearing a custom kit with number 7"; instead of "LeBron James", use "a towering athletic basketball star in a purple and gold jersey"; instead of "Elon Musk", use "a wealthy tech entrepreneur").
+           - CRITICAL DATA RETENTION RULE: Continue the narrative summary while explicitly preserving and including the remaining main facts, statistics, percentages, and metrics.
+        4. "imagePrompt": A detailed, highly descriptive image prompt for an AI image generator representing the core action and data of the article.
+           - STYLE & GRAPHICAL DIRECTIVE:
+             - If the news is data-driven, stock-market-related, financial, or statistical, the image MUST symbolise and show exactly what the news is by depicting a stylized graphical display of the data: e.g., a dynamic chart, a stock trend line graph, growth bars, or a dashboard showing the data trend (like a glowing upward green arrow/line for growth/gain, or a sharp downward red arrow/line for a fall/decline). Combine this graph with symbolic elements related to the subject (e.g., a stylized microchip, a building, currency coins, or company logo shapes if appropriate and generic).
+             - If the news is action/event-driven, depict the actual physical event described in the article in a highly symbolic way.
+             - CRITICAL TEXT-FREE SAFETY GUARD: The image prompt must NOT contain or request any words, letters, text, numbers, symbols that look like letters, speech bubbles, talk bubbles, or character dialogue. Explicitly describe a pure visual composition without any text labels or lettering of any kind in the scene.
+           - CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
+             Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
+           - CRITICAL CELEBRITY RULE: Do NOT use real-world celebrity names, specific athletes, or copyrighted public figures in the descriptions, as this triggers the image generator's safety/censorship filters. Instead, describe them generically (e.g., instead of "Cristiano Ronaldo", use "a world-famous athletic Portuguese soccer player wearing a custom kit with number 7"; instead of "LeBron James", use "a towering athletic basketball star in a purple and gold jersey"; instead of "Elon Musk", use "a wealthy tech entrepreneur").
 
         Output MUST be in valid JSON format like this:
         {
@@ -519,9 +526,6 @@ shareBtn.addEventListener('click', async () => {
     }
 });
 
-
-
-
 function anonymizePrompt(prompt, style, caption = '') {
     let simplifiedPrompt = prompt;
     // Anonymize common celebrity/public figure names to avoid safety/policy filters
@@ -557,10 +561,12 @@ function anonymizePrompt(prompt, style, caption = '') {
             .replace(/\s*\.\s*/g, '. ')
             .replace(/\s+/g, ' ')
             .trim();
-        simplifiedPrompt = `A scene entirely in ${style || 'anime'} style. ${cleanCaption}. Every detail must strictly match the ${style || 'anime'} style. No realistic elements.`;
+        simplifiedPrompt = `A scene entirely in ${style || 'anime'} style. ${cleanCaption}. Every detail must strictly match the ${style || 'anime'} style. No realistic elements. Completely wordless, no text, no letters, no speech bubbles, no dialogue, no labels.`;
     } else if (simplifiedPrompt === prompt) {
         // Fallback if no caption is present and no celebrity names were replaced
-        simplifiedPrompt = `A stunning scene in ${style || 'comic'} style. ${prompt.substring(0, 100)}...`;
+        simplifiedPrompt = `A stunning scene in ${style || 'comic'} style. ${prompt.substring(0, 100)}... Completely wordless, no text, no letters, no speech bubbles, no dialogue, no labels.`;
+    } else {
+        simplifiedPrompt = `${simplifiedPrompt}. Completely wordless, no text, no letters, no speech bubbles, no dialogue, no labels.`;
     }
     return simplifiedPrompt;
 }
@@ -599,7 +605,7 @@ function shortenPromptText(text, limit) {
 function buildNvidiaPrompt(prompt, style) {
     const basePrompt = stripRepeatedStyleWrapper(prompt);
     const stylePrefix = style && style !== 'custom characters' ? `Style: ${normalizePromptText(style)}. ` : '';
-    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized.' : '';
+    const styleSuffix = style && style !== 'custom characters' ? ' Keep it fully stylized. Wordless, no text, no letters, no speech bubbles, no dialogue, no labels.' : ' Wordless, no text, no letters, no speech bubbles, no dialogue, no labels.';
     const remaining = Math.max(120, NVIDIA_PROMPT_LIMIT - stylePrefix.length - styleSuffix.length);
     const compactPrompt = shortenPromptText(basePrompt, remaining);
     return `${stylePrefix}${compactPrompt}${styleSuffix}`.trim();

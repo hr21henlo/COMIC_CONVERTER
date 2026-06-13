@@ -35,9 +35,10 @@ exports.handler = async (event, context) => {
                Each panel object MUST contain:
                - "caption": A concise, educational narrator description of the event (exactly 1-2 sentences, approximately 20-30 words) styled like a classic comic narrator's text box.
                - "imagePrompt": A highly descriptive, detailed image prompt representing the historical action described in the caption.
-                 CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
-                 Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
-                 CRITICAL CELEBRITY/HISTORICAL FIGURES RULE: Do NOT use real-world copyrighted public figures or modern celebrity names. Describe historical figures generically (e.g., instead of "Napoleon Bonaparte", use "a short French general in an early 19th-century military uniform with a bicorn hat"; instead of "George Washington", use "a tall American general with powdered hair wearing a blue continental army uniform").
+                 - CRITICAL TEXT-FREE SAFETY GUARD: The image prompt must NOT contain or request any words, letters, text, numbers, symbols that look like letters, speech bubbles, talk bubbles, or character dialogue. Explicitly describe a pure visual composition without any text labels or lettering of any kind in the scene.
+                 - CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
+                   Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
+                 - CRITICAL CELEBRITY/HISTORICAL FIGURES RULE: Do NOT use real-world copyrighted public figures or modern celebrity names. Describe historical figures generically (e.g., instead of "Napoleon Bonaparte", use "a short French general in an early 19th-century military uniform with a bicorn hat"; instead of "George Washington", use "a tall American general with powdered hair wearing a blue continental army uniform").
             
             Output MUST be in valid JSON format like this:
             {
