@@ -53,9 +53,12 @@ exports.handler = async (event, context) => {
         const nvidiaPrompt = buildNvidiaPrompt(prompt, style);
         console.log(`🎨 Backend sending prompt to NVIDIA FLUX NIM: "${nvidiaPrompt}"`);
 
-        let response;
-        try {
-            response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b", {
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("Request timed out (5s)")), 5000)
+        );
+
+        const apiCallPromise = (async () => {
+            const response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${apiKey}`,
@@ -68,19 +71,23 @@ exports.handler = async (event, context) => {
                     width: 1024,
                     cfg_scale: 1,
                     steps: 4
-                }),
-                signal: AbortSignal.timeout(5000) // 5s timeout to prevent Netlify function hang
+                })
             });
+
+            if (!response.ok) {
+                const errorDetail = await response.text();
+                throw new Error(`HTTP ${response.status}: ${errorDetail}`);
+            }
+
+            return await response.json();
+        })();
+
+        let data;
+        try {
+            data = await Promise.race([apiCallPromise, timeoutPromise]);
         } catch (fetchErr) {
-            return await getFallbackResponse(`Nvidia API fetch failed/timeout: ${fetchErr.message}`);
+            return await getFallbackResponse(`Nvidia API call failed or timed out: ${fetchErr.message}`);
         }
-
-        if (!response.ok) {
-            const errorDetail = await response.text();
-            return await getFallbackResponse(`HTTP ${response.status}: ${errorDetail}`);
-        }
-
-        const data = await response.json();
         
         let imageData = null;
         if (data.image) {
@@ -169,22 +176,29 @@ async function generateGeminiSVGBackend(prompt, style, apiKey) {
         - CRITICAL TEXT-FREE GUARD: Absolutely NO text, letters, numbers, labels, or speech bubbles are allowed in the SVG. Convey all concepts and data purely through shapes, paths, lines, circles, colors, grids, and icons.
     `;
 
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{
-                parts: [{ text: svgPrompt }]
-            }]
-        }),
-        signal: AbortSignal.timeout(3000) // 3s timeout for Gemini SVG generation
-    });
+    const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timed out (3s)")), 3000)
+    );
 
-    if (!response.ok) {
-        throw new Error(`Gemini SVG API failed with HTTP ${response.status}`);
-    }
+    const apiCallPromise = (async () => {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{
+                    parts: [{ text: svgPrompt }]
+                }]
+            })
+        });
 
-    const data = await response.json();
+        if (!response.ok) {
+            throw new Error(`Gemini SVG API failed with HTTP ${response.status}`);
+        }
+
+        return await response.json();
+    })();
+
+    const data = await Promise.race([apiCallPromise, timeoutPromise]);
     if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
         const textResult = data.candidates[0].content.parts[0].text;
         const match = textResult.match(/<svg[\s\S]*<\/svg>/i);
