@@ -95,7 +95,8 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({ image: imageData, fallback: false })
             };
         } else {
-            return await getFallbackResponse("Invalid response format from NVIDIA API");
+            console.error("❌ NVIDIA invalid response:", JSON.stringify(data));
+            return await getFallbackResponse(`Invalid response format from NVIDIA API. Response: ${JSON.stringify(data).substring(0, 150)}`);
         }
 
     } catch (error) {
