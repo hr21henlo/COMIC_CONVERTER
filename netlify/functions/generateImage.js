@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
         const nvidiaPrompt = buildNvidiaPrompt(prompt, style);
         console.log(`🎨 Backend sending prompt to NVIDIA FLUX NIM: "${nvidiaPrompt}"`);
 
-        const response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.1-schnell", {
+        const response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
@@ -59,8 +59,10 @@ exports.handler = async (event, context) => {
             },
             body: JSON.stringify({
                 prompt: nvidiaPrompt,
-                image_format: "png",
-                aspect_ratio: "1:1"
+                height: 1024,
+                width: 1024,
+                cfg_scale: 1,
+                steps: 4
             })
         });
 
@@ -71,11 +73,20 @@ exports.handler = async (event, context) => {
 
         const data = await response.json();
         
-        if (data && data.artifacts && data.artifacts[0] && data.artifacts[0].base64) {
+        let imageData = null;
+        if (data.image) {
+            imageData = data.image;
+        } else if (data.artifacts && data.artifacts[0] && data.artifacts[0].base64) {
+            imageData = data.artifacts[0].base64;
+        } else if (data.data && data.data[0] && data.data[0].b64_json) {
+            imageData = data.data[0].b64_json;
+        }
+
+        if (imageData) {
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ image: data.artifacts[0].base64 })
+                body: JSON.stringify({ image: imageData })
             };
         } else {
             return await getFallbackResponse("Invalid response format from NVIDIA API");
