@@ -29,7 +29,7 @@ exports.handler = async (event, context) => {
                 return {
                     statusCode: 200,
                     headers,
-                    body: JSON.stringify({ image: base64Svg })
+                    body: JSON.stringify({ image: base64Svg, fallback: true, error: errorMsg })
                 };
             } catch (svgErr) {
                 console.error("❌ Backend SVG generation failed. Returning local fallback SVG:", svgErr);
@@ -37,7 +37,7 @@ exports.handler = async (event, context) => {
                 return {
                     statusCode: 200,
                     headers,
-                    body: JSON.stringify({ image: localSvg })
+                    body: JSON.stringify({ image: localSvg, fallback: true, error: `${errorMsg} (Gemini fallback failed: ${svgErr.message})` })
                 };
             }
         };
@@ -50,21 +50,27 @@ exports.handler = async (event, context) => {
         const nvidiaPrompt = buildNvidiaPrompt(prompt, style);
         console.log(`🎨 Backend sending prompt to NVIDIA FLUX NIM: "${nvidiaPrompt}"`);
 
-        const response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${apiKey}`,
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            },
-            body: JSON.stringify({
-                prompt: nvidiaPrompt,
-                height: 1024,
-                width: 1024,
-                cfg_scale: 1,
-                steps: 4
-            })
-        });
+        let response;
+        try {
+            response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.2-klein-4b", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                    "Accept": "application/json"
+                },
+                body: JSON.stringify({
+                    prompt: nvidiaPrompt,
+                    height: 1024,
+                    width: 1024,
+                    cfg_scale: 1,
+                    steps: 4
+                }),
+                signal: AbortSignal.timeout(5000) // 5s timeout to prevent Netlify function hang
+            });
+        } catch (fetchErr) {
+            return await getFallbackResponse(`Nvidia API fetch failed/timeout: ${fetchErr.message}`);
+        }
 
         if (!response.ok) {
             const errorDetail = await response.text();
@@ -86,7 +92,7 @@ exports.handler = async (event, context) => {
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ image: imageData })
+                body: JSON.stringify({ image: imageData, fallback: false })
             };
         } else {
             return await getFallbackResponse("Invalid response format from NVIDIA API");
@@ -166,7 +172,8 @@ async function generateGeminiSVGBackend(prompt, style, apiKey) {
             contents: [{
                 parts: [{ text: svgPrompt }]
             }]
-        })
+        }),
+        signal: AbortSignal.timeout(3000) // 3s timeout for Gemini SVG generation
     });
 
     if (!response.ok) {

@@ -251,6 +251,9 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
             throw new Error(errData.error || `HTTP ${response.status} failed to generate image`);
         }
         const data = await response.json();
+        if (data.fallback) {
+            console.warn(`⚠️ NVIDIA FLUX API call fell back to SVG: ${data.error}`);
+        }
         return data.image;
     }
 
