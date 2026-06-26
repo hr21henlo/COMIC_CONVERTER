@@ -25,6 +25,14 @@ exports.handler = async (event, context) => {
         // Ultimate fallback helper
         const getFallbackResponse = async (errorMsg) => {
             console.warn(`⚠️ Nvidia NIM API failed: ${errorMsg}. Activating SVG fallback...`);
+            const debugInfo = {
+                nvidia_key_exists: !!apiKey,
+                nvidia_key_length: apiKey?.length,
+                nvidia_key_start: apiKey ? apiKey.substring(0, 6) : null,
+                gemini_key_exists: !!geminiApiKey,
+                gemini_key_length: geminiApiKey?.length,
+                gemini_key_start: geminiApiKey ? geminiApiKey.substring(0, 6) : null
+            };
             try {
                 if (!geminiApiKey) throw new Error("Gemini API key is not configured on the server.");
                 const svgCode = await generateGeminiSVGBackend(prompt, style, geminiApiKey);
@@ -32,7 +40,7 @@ exports.handler = async (event, context) => {
                 return {
                     statusCode: 200,
                     headers,
-                    body: JSON.stringify({ image: base64Svg, fallback: true, error: errorMsg })
+                    body: JSON.stringify({ image: base64Svg, fallback: true, error: errorMsg, debug: debugInfo })
                 };
             } catch (svgErr) {
                 console.error("❌ Backend SVG generation failed. Returning local fallback SVG:", svgErr);
@@ -40,7 +48,7 @@ exports.handler = async (event, context) => {
                 return {
                     statusCode: 200,
                     headers,
-                    body: JSON.stringify({ image: localSvg, fallback: true, error: `${errorMsg} (Gemini fallback failed: ${svgErr.message})` })
+                    body: JSON.stringify({ image: localSvg, fallback: true, error: `${errorMsg} (Gemini fallback failed: ${svgErr.message})`, debug: debugInfo })
                 };
             }
         };

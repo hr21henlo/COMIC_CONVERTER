@@ -253,6 +253,7 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
         const data = await response.json();
         if (data.fallback) {
             console.error(`⚠️ NVIDIA FLUX API call fell back to SVG: ${data.error}`);
+            if (data.debug) console.error("🔧 Debug Env Keys on Server:", JSON.stringify(data.debug));
         }
         return data.image;
     }
