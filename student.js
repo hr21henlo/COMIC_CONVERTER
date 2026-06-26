@@ -174,7 +174,7 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
         const response = await fetch("/.netlify/functions/generateImage", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ prompt, style })
+            body: JSON.stringify({ prompt, style, caption })
         });
         if (!response.ok) {
             const errData = await response.json().catch(() => ({}));
