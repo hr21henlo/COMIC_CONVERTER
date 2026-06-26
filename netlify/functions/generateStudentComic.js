@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
 
     try {
         const { text, style } = JSON.parse(event.body);
-        const apiKey = process.env.VITE_GEMINI_API_KEY;
+        const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
             return {

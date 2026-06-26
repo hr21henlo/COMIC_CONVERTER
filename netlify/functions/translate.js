@@ -16,7 +16,7 @@ exports.handler = async (event, context) => {
 
     try {
         const { text, targetLanguage } = JSON.parse(event.body);
-        const apiKey = process.env.VITE_SARVAM_API_KEY;
+        const apiKey = process.env.VITE_SARVAM_API_KEY || process.env.SARVAM_API_KEY;
 
         if (!apiKey) {
             return {

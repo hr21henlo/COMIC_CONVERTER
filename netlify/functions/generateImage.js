@@ -16,8 +16,8 @@ exports.handler = async (event, context) => {
 
     try {
         const { prompt, style } = JSON.parse(event.body);
-        const apiKey = process.env.VITE_NVIDIA_API_KEY;
-        const geminiApiKey = process.env.VITE_GEMINI_API_KEY;
+        const apiKey = process.env.VITE_NVIDIA_API_KEY || process.env.NVIDIA_API_KEY;
+        const geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
 
         // Ultimate fallback helper
         const getFallbackResponse = async (errorMsg) => {
