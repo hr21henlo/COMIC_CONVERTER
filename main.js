@@ -408,7 +408,7 @@ function updateCardImageAtIndex(index, imageUrl, total) {
     if (!imgContainer) return;
     
     const skeleton = imgContainer.querySelector('.skeleton-img');
-    const imgSrc = imageUrl.startsWith('http') ? imageUrl : `data:image/png;base64,${imageUrl}`;
+    const imgSrc = (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) ? imageUrl : `data:image/png;base64,${imageUrl}`;
     
     // Cache the first image URL (fallback for any legacy usage or single card checks)
     if (index === 0) {

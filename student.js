@@ -329,7 +329,7 @@ studentGenerateBtn.addEventListener('click', async () => {
 function updateStudentPanelImage(index, imageUrl) {
     const container = document.getElementById(`studentImg${index}`);
     const skeleton = container.querySelector('.skeleton-img');
-    const imgSrc = imageUrl.startsWith('http') ? imageUrl : `data:image/png;base64,${imageUrl}`;
+    const imgSrc = (imageUrl.startsWith('http') || imageUrl.startsWith('data:')) ? imageUrl : `data:image/png;base64,${imageUrl}`;
     
     const img = document.createElement('img');
     img.src = imgSrc;

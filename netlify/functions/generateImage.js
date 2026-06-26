@@ -50,7 +50,7 @@ exports.handler = async (event, context) => {
         const nvidiaPrompt = buildNvidiaPrompt(prompt, style);
         console.log(`🎨 Backend sending prompt to NVIDIA FLUX NIM: "${nvidiaPrompt}"`);
 
-        const response = await fetch("https://ai.api.nvidia.com/v1/genai/blackforestlabs/flux-1-schnell", {
+        const response = await fetch("https://ai.api.nvidia.com/v1/genai/black-forest-labs/flux.1-schnell", {
             method: "POST",
             headers: {
                 "Authorization": `Bearer ${apiKey}`,
