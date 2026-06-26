@@ -182,7 +182,7 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
         }
         const data = await response.json();
         if (data.fallback) {
-            console.warn(`⚠️ NVIDIA FLUX API call fell back to SVG: ${data.error}`);
+            console.error(`⚠️ NVIDIA FLUX API call fell back to SVG: ${data.error}`);
         }
         return data.image;
     }
