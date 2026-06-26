@@ -16,8 +16,11 @@ exports.handler = async (event, context) => {
 
     try {
         const { prompt, style } = JSON.parse(event.body);
-        const apiKey = process.env.VITE_NVIDIA_API_KEY || process.env.NVIDIA_API_KEY;
-        const geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+        let apiKey = process.env.VITE_NVIDIA_API_KEY || process.env.NVIDIA_API_KEY;
+        if (apiKey) apiKey = apiKey.trim().replace(/^["']|["']$/g, '');
+
+        let geminiApiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+        if (geminiApiKey) geminiApiKey = geminiApiKey.trim().replace(/^["']|["']$/g, '');
 
         // Ultimate fallback helper
         const getFallbackResponse = async (errorMsg) => {
