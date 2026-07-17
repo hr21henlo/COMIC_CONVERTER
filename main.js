@@ -78,7 +78,7 @@ generateBtn.addEventListener('click', async () => {
     resetUI();
     try {
         const characterStyle = document.querySelector('input[name="characterStyle"]:checked').value;
-        const cardCount = parseInt(document.querySelector('input[name="cardCount"]:checked')?.value || '1', 10);
+        const cardCount = 4; // Always generate exactly 4 panels for the comic templates
         
         // Step 1: Generate News Card script with Gemini
         updateStatus("Editor: Slicing article into a dramatic comic layout...", 20);
@@ -95,6 +95,14 @@ generateBtn.addEventListener('click', async () => {
             }
         }
 
+        // Set comic page title
+        const pageTitle = cardData.pageTitle || cards[0]?.headline || "COMICGEN STRIP";
+        const titleEl = document.getElementById('comicPageTitle');
+        if (titleEl) {
+            titleEl.innerText = pageTitle.toUpperCase();
+            titleEl.style.display = 'block';
+        }
+
         updateStatus("Artist: Prepping card canvas...", 40);
         renderPlaceholderCards(cards);
 
@@ -108,8 +116,12 @@ generateBtn.addEventListener('click', async () => {
         const langSelect = document.getElementById('cardLanguageSelect');
         if (langSelect) langSelect.value = 'en';
 
-        // Step 2: Generate images with Flux (Nvidia API)
+        // Step 2: Generate images with Flux (Nvidia API) with staggered delay to prevent rate limits
         for (let i = 0; i < cards.length; i++) {
+            if (i > 0) {
+                updateStatus(`Waiting briefly to avoid API rate limiting...`, 50 + (i / cards.length) * 45);
+                await new Promise(resolve => setTimeout(resolve, 800)); // 800ms throttle
+            }
             const card = cards[i];
             try {
                 updateStatus(`Artist: Sketching panel ${i + 1} of ${cards.length}...`, 50 + (i / cards.length) * 45);
@@ -154,31 +166,24 @@ async function generateNewsCard(text, style, numCards = 1) {
     }
     
     const prompt = `
-        You are an elite comic-book editor. Convert the following article into exactly ${numCards} chronological/logical visual News Card(s).
-        - If exactly 1 card is requested: Summarize the entire article in one high-level card.
-        - If exactly 2 cards are requested: Split the article content into 2 chronological segments (Card 1: Background/Setup, Card 2: Climax/Result).
-        - If exactly 3 cards are requested: Split the article content into 3 chronological segments (Card 1: Initial Context/Background, Card 2: Core Event/Detailed Data, Card 3: Impact/Future Implications).
-        - Make the summaries highly detailed, descriptive, and closer to the original text as the number of cards increases, while still remaining a summarized news layout.
+        You are an elite comic-book editor. Convert the following article into exactly ${numCards} chronological/logical visual Comic Panels forming a single cohesive page.
+        Make the panels highly detailed, descriptive, and closer to the original text as the number of panels increases.
 
-        Generate a JSON object with a single field "cards" containing an array of exactly ${numCards} card objects. Each card object in the array MUST contain:
-        1. "headline": A highly dramatic, punchy comic-book style headline for the top banner of the card.
-           - CRITICAL DATA RETENTION RULE: If the card's section contains key metrics, stock prices, percentages, ticker symbols, or major numbers, the headline MUST explicitly include these numbers or metrics. Do not genericize or omit them.
-        2. "brief1": A highly dramatic and "comicky" narrative setup of the card's story segment (exactly 2-3 sentences, approximately 40-50 words) written in the style of an energetic classic comic book pulp narrator (e.g., using dramatic hooks like "Meanwhile, in the high-stakes arena of...", "A new dawn rises as...", "But tragedy struck when...").
-           - CRITICAL COMPREHENSIVENESS & DATA RETENTION RULE: Despite the pulp narrator style, it MUST remain an accurate, thorough summary. You MUST explicitly preserve and include all key metrics, numbers, percentages, dates, stock prices, ticker symbols, and specific names relevant to this section of the text. Do not simplify or omit any core details.
-        3. "brief2": A highly dramatic and "comicky" continuation or impact statement of the card's story segment (exactly 2-3 sentences, approximately 40-50 words) continuing the energetic pulp narrator style (e.g., "But the clock is ticking...", "Will they succeed, or will...").
-           - CRITICAL COMPREHENSIVENESS & DATA RETENTION RULE: Continue the summary in the same pulp style while explicitly including all remaining facts, statistics, percentages, metrics, and outcomes from the original text segment. It must be a complete overview, leaving no key information behind.
-        4. "imagePrompt": A detailed, highly descriptive image prompt for an AI image generator representing the core action and data of this card's section.
-           - STYLE & GRAPHICAL DIRECTIVE:
-             - If this card's section contains statistics, metrics, or financial data, the image MUST symbolise and show exactly what the news is by depicting a high-quality stylized graphical display of the data: e.g., a waffle grid chart of square colored blocks representing proportions, a polar network/radar plot showing circular node connections, a clean rising/falling stock chart with colored nodes, or a schematic blueprint/infographic of the system (like solar panels, buildings, or microchips).
-             - Map the numerical quantities from the article into visual elements. Describe the layout precisely: e.g., 'a waffle unit grid of 100 squares, where 80 squares are colored bright green representing the non-fossil target and 20 squares are orange representing transmission'.
-             - If the card's section is action/event-driven, depict the actual physical event described in the article in a highly symbolic way.
-             - CRITICAL TEXT-FREE SAFETY GUARD: The image prompt must NOT contain or request any words, letters, text, numbers, symbols that look like letters, speech bubbles, talk bubbles, or character dialogue. The chart/diagram must be completely wordless and numberless, conveying the data purely through visual shapes, colors, lines, grids, charts, and diagrams.
-           - CRITICAL STYLE OVERRIDE: The ENTIRE image (characters, environment, background, objects, lighting) MUST be strictly in the "${style}" style. 
-             Do not use realistic, cinematic, or any conflicting styles. Every single visual element must strongly match the "${style}" aesthetic.
-           - CRITICAL CELEBRITY RULE: Do NOT use real-world celebrity names, specific athletes, or copyrighted public figures in the descriptions. Describe them generically.
+        Generate a JSON object with:
+        1. "pageTitle": A highly dramatic, punchy comic-book style page title for the entire comic sheet (e.g., "THE RISE OF DIGITAL INTELLIGENCE!").
+           - CRITICAL DATA RETENTION RULE: If the article contains key metrics, stock prices, or major numbers, the title MUST explicitly include these numbers.
+        2. "cards": An array of exactly ${numCards} panel objects. Each panel object in the array MUST contain:
+           - "headline": A short, high-energy comic sound effect, action tag, or dramatic sub-caption (e.g. "POW!", "SPLAT!", "THE LAUNCH!", "A NEW THREAT!").
+           - "brief1": A concise narrator text box caption (exactly 1-2 sentences, approximately 15-25 words) written in the style of an energetic comic pulp narrator describing the scene (e.g., "Meanwhile, in the high-stakes arena of tech...", "A new dawn rises as..."). Preserve all critical names and metrics.
+           - "brief2": A character dialogue or monologue reactively speaking about the action in this panel, written in the format "Speaker Name: Dialogue Text" (e.g. "Elon Musk: We are launching today!" or "Investor: My stock is soaring!"). Keep it under 15 words and extremely punchy.
+           - "imagePrompt": A detailed, highly descriptive image prompt for an AI image generator representing the action of this panel.
+             - CRITICAL TEXT-FREE SAFETY GUARD: The image prompt must NOT contain or request any words, letters, text, numbers, symbols that look like letters, speech bubbles, talk bubbles, or character dialogue. The image must be completely wordless, conveying the concept purely through visual shapes, colors, lines, and characters.
+             - CRITICAL STYLE OVERRIDE: The ENTIRE image MUST be strictly in the "${style}" style.
+             - CRITICAL CELEBRITY RULE: Do NOT use real-world celebrity names. Describe them generically (e.g. "a tech billionaire with short brown hair" instead of "Elon Musk").
 
         Output MUST be in valid JSON format like this:
         {
+            "pageTitle": "...",
             "cards": [
                 {
                     "headline": "...",
@@ -332,35 +337,152 @@ async function generateImage(prompt, style, caption = '', retryCount = 0) {
     }
 }
 
+const COMIC_LAYOUTS = [
+    {
+        name: "Grid 2x2",
+        class: "layout-grid-2x2",
+        panels: [
+            { gridArea: "1 / 1 / 2 / 2" },
+            { gridArea: "1 / 2 / 2 / 3" },
+            { gridArea: "2 / 1 / 3 / 2" },
+            { gridArea: "2 / 2 / 3 / 3" }
+        ],
+        aspectRatio: "1/1"
+    },
+    {
+        name: "Wide Top Banner",
+        class: "layout-wide-top",
+        panels: [
+            { gridArea: "1 / 1 / 2 / 4" },
+            { gridArea: "2 / 1 / 3 / 2" },
+            { gridArea: "2 / 2 / 3 / 3" },
+            { gridArea: "2 / 3 / 3 / 4" }
+        ],
+        aspectRatio: "3/4"
+    },
+    {
+        name: "Large Left Panel",
+        class: "layout-large-left",
+        panels: [
+            { gridArea: "1 / 1 / 4 / 2" },
+            { gridArea: "1 / 2 / 2 / 3" },
+            { gridArea: "2 / 2 / 3 / 3" },
+            { gridArea: "3 / 2 / 4 / 3" }
+        ],
+        aspectRatio: "4/3"
+    },
+    {
+        name: "Wide Bottom Banner",
+        class: "layout-wide-bottom",
+        panels: [
+            { gridArea: "1 / 1 / 2 / 2" },
+            { gridArea: "1 / 2 / 2 / 3" },
+            { gridArea: "1 / 3 / 2 / 4" },
+            { gridArea: "2 / 1 / 3 / 4" }
+        ],
+        aspectRatio: "3/4"
+    },
+    {
+        name: "Alternating Rows",
+        class: "layout-alternating",
+        panels: [
+            { gridArea: "1 / 1 / 2 / 4" },
+            { gridArea: "1 / 4 / 2 / 7" },
+            { gridArea: "2 / 1 / 3 / 3" },
+            { gridArea: "2 / 3 / 3 / 7" }
+        ],
+        aspectRatio: "1.2/1"
+    }
+];
+
+const overlayPositions = [
+    {
+        narrationStyle: "top: 8px; left: 8px; max-width: 60%;",
+        bubbleStyle: "bottom: 14px; right: 10px; max-width: 42%;",
+        bubbleClass: "bubble-bottom-right",
+        badgeStyle: "bottom: 8px; left: 8px;"
+    },
+    {
+        narrationStyle: "top: 8px; right: 8px; max-width: 60%;",
+        bubbleStyle: "bottom: 14px; left: 10px; max-width: 42%;",
+        bubbleClass: "bubble-bottom-left",
+        badgeStyle: "bottom: 8px; right: 8px;"
+    },
+    {
+        narrationStyle: "top: 8px; left: 8px; max-width: 58%;",
+        bubbleStyle: "bottom: 14px; right: 10px; max-width: 40%;",
+        bubbleClass: "bubble-bottom-right",
+        badgeStyle: "bottom: 8px; left: 8px;"
+    },
+    {
+        narrationStyle: "top: 8px; right: 8px; max-width: 58%;",
+        bubbleStyle: "bottom: 14px; left: 10px; max-width: 40%;",
+        bubbleClass: "bubble-bottom-left",
+        badgeStyle: "bottom: 8px; right: 8px;"
+    }
+];
+
 function renderPlaceholderCards(cards) {
     const cardsWorkspace = document.getElementById('cardsWorkspace');
     if (!cardsWorkspace) return;
     
+    // Pick a layout randomly
+    const layoutIndex = Math.floor(Math.random() * COMIC_LAYOUTS.length);
+    const layout = COMIC_LAYOUTS[layoutIndex];
+    cardsWorkspace.dataset.layoutIndex = layoutIndex;
+    
     cardsWorkspace.innerHTML = '';
     
+    // Reset layout-specific classes
+    cardsWorkspace.className = 'cards-workspace';
+    cardsWorkspace.classList.add(layout.class);
+    
+    cardsWorkspace.style.display = 'grid';
+    cardsWorkspace.style.gap = '20px';
+    cardsWorkspace.style.width = '100%';
+    
     cards.forEach((card, index) => {
-        const cardDiv = document.createElement('div');
-        cardDiv.className = 'news-card';
-        cardDiv.id = `newsCard-${index}`;
-        cardDiv.style.marginBottom = index === cards.length - 1 ? '0' : '35px';
+        const layoutPanel = layout.panels[index] || { gridArea: 'auto' };
+        const pos = overlayPositions[index % overlayPositions.length];
         
-        // Alternating slight rotations
-        const rotationVal = index % 3 === 0 ? '-0.5deg' : (index % 3 === 1 ? '0.6deg' : '-0.3deg');
-        cardDiv.style.transform = `rotate(${rotationVal})`;
+        // Parse Speaker and Dialogue from brief2
+        const colonIndex = card.brief2.indexOf(':');
+        let speaker = "";
+        let dialogueText = card.brief2;
+        if (colonIndex > 0 && colonIndex < 35) {
+            speaker = card.brief2.substring(0, colonIndex).trim();
+            dialogueText = card.brief2.substring(colonIndex + 1).trim();
+            // Remove double quotes
+            dialogueText = dialogueText.replace(/^["']|["']$/g, '');
+        }
         
-        cardDiv.innerHTML = `
-            <h3 class="news-card-headline" id="newsCardHeadline-${index}">${card.headline.toUpperCase()}</h3>
-            <div class="news-card-left">
-                <div class="news-card-img-container loading-state" id="newsCardImgContainer-${index}">
-                    <div class="skeleton-img"></div>
-                </div>
+        const panelDiv = document.createElement('div');
+        panelDiv.className = 'comic-panel-container';
+        panelDiv.style.gridArea = layoutPanel.gridArea;
+        
+        panelDiv.innerHTML = `
+            <!-- NVIDIA FLUX Image Container -->
+            <div class="news-card-img-container loading-state" id="newsCardImgContainer-${index}" style="width: 100%; height: 100%; border: none; box-shadow: none; margin: 0; aspect-ratio: unset;">
+                <div class="skeleton-img"></div>
             </div>
-            <div class="news-card-right" style="display: flex; flex-direction: column; gap: 16px;">
-                <div class="news-card-brief" id="newsCardBrief1-${index}">${card.brief1}</div>
-                <div class="news-card-brief" id="newsCardBrief2-${index}">${card.brief2}</div>
+            
+            <!-- Narration caption box — always top corner, width-capped so it doesn't flood the panel -->
+            <div class="narration-box" id="newsCardBrief1-${index}" style="${pos.narrationStyle}">
+                ${card.brief1}
+            </div>
+
+            <!-- Dialogue Speech Bubble — opposite bottom corner from narration, width-capped so it hugs the edge -->
+            <div class="speech-bubble-overlay ${pos.bubbleClass}" id="newsCardBrief2-${index}" style="${pos.bubbleStyle}">
+                ${speaker ? `<strong class="speech-speaker">${speaker.toUpperCase()}</strong>` : ''}
+                <span class="speech-text">"${dialogueText}"</span>
+            </div>
+
+            <!-- Headline Sound Effect Badge — sits at the BOTTOM on the same side as narration (opposite to bubble) -->
+            <div class="style-badge" id="newsCardHeadline-${index}" style="position: absolute; ${pos.badgeStyle} z-index: 6; font-size: 0.72rem; padding: 2px 7px; background: var(--c-magenta); border: 2px solid #000; box-shadow: 2px 2px 0px #000; white-space: nowrap;">
+                ${card.headline.toUpperCase()}
             </div>
         `;
-        cardsWorkspace.appendChild(cardDiv);
+        cardsWorkspace.appendChild(panelDiv);
     });
     
     if (comicPage) {
@@ -375,33 +497,61 @@ demoBtn.addEventListener('click', async () => {
     toggleLoading(true);
     resetUI();
     
-    updateStatus("Demo Mode: Generating Layout...", 50);
+    updateStatus("Demo Mode: Generating Layout...", 40);
     
-    const fakeCard = {
-        headline: "SPACEX STARSHIP LANDS TRIUMPHANTLY ON THE MARS REGOLITH!",
-        brief1: "IN A HISTORIC FEAT THAT DEFIES IMAGINATION, ELON MUSK'S GIGANTIC STARSHIP HAS TOUCHED DOWN ON THE RED PLANET'S DUSTY REGOLITH!",
-        brief2: "MILLIONS HELD THEIR BREATH AS THE METAL TITAN BEAMED BACK SENSATIONAL PICTURES OF A NEW DAWN FOR INTERPLANETARY HUMANITY!",
-        imagePrompt: "SpaceX Starship landed on Mars"
-    };
+    const fakeTitle = "SPACEX CONQUERS MARS: THE DAWN OF MULTI-PLANETARY LIFE!";
+    const titleEl = document.getElementById('comicPageTitle');
+    if (titleEl) {
+        titleEl.innerText = fakeTitle.toUpperCase();
+        titleEl.style.display = 'block';
+    }
 
-    renderPlaceholderCards([fakeCard]);
+    const fakeCards = [
+        {
+            headline: "THE LAUNCH!",
+            brief1: "FROM THE DUSTY GULF COAST OF BOCA CHICA, TEXAS, THE BIGGEST BOOSTER IN HUMAN HISTORY ROARS TO LIFE WITH UNPRECEDENTED POWER!",
+            brief2: "Elon Musk: We are launching mankind into a new era! Starship is off!",
+            imagePrompt: "SpaceX Starship rocket launching into orbit"
+        },
+        {
+            headline: "DEEP SPACE TRAVEL!",
+            brief1: "SILENTLY CRUISING THROUGH THE COLD VOID OF SPACE, THE STAINLESS STEEL TITAN FIRES ITS RAPTOR ENGINES TOWARDS THE RED PLANET!",
+            brief2: "Astronaut: The stars are gorgeous... Next stop, Mars!",
+            imagePrompt: "Starship cruising in deep space near Mars"
+        },
+        {
+            headline: "ATMOSPHERIC ENTRY!",
+            brief1: "PLUNGING INTO THE THIN MARTIAN ATMOSPHERE, THE SHIP'S HEATSHIELD GLOWS WHITE-HOT AS THE PIONEERING CREW PREPARES FOR TOUCHDOWN!",
+            brief2: "Mission Control: Altitude dropping fast... Deploying steering flaps!",
+            imagePrompt: "Starship reentry into Martian atmosphere glowing orange"
+        },
+        {
+            headline: "TOUCHDOWN!",
+            brief1: "WITH A TRIUMPHANT EXPLOSION OF ORANGE DUST, THE METAL GIANT TOUCHES DOWN SAFELY ON THE MARS REGOLITH!",
+            brief2: "Elon Musk: The Starship has landed! Mars is ours!",
+            imagePrompt: "SpaceX Starship landed on the red surface of Mars"
+        }
+    ];
+
+    renderPlaceholderCards(fakeCards);
 
     // Cache original text for translations
-    originalCardTexts = [{
-        headline: fakeCard.headline,
-        brief1: fakeCard.brief1,
-        brief2: fakeCard.brief2
-    }];
+    originalCardTexts = fakeCards.map(c => ({
+        headline: c.headline,
+        brief1: c.brief1,
+        brief2: c.brief2
+    }));
     translationCache = {};
     const langSelect = document.getElementById('cardLanguageSelect');
     if (langSelect) langSelect.value = 'en';
 
-    // Simulate image loading
-    await new Promise(resolve => setTimeout(resolve, 1500)); // 1.5s delay
-    
-    updateStatus("Demo Mode: Finalizing design...", 90);
-    const demoImgUrl = `https://picsum.photos/seed/${Math.random()}/1024/1024`;
-    updateCardImageAtIndex(0, demoImgUrl, 1);
+    // Simulate staggered image loading
+    for (let i = 0; i < fakeCards.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800)); // 800ms delay between panels
+        updateStatus(`Demo Mode: Finalizing panel ${i + 1} of 4...`, 50 + (i / 4) * 45);
+        const demoImgUrl = `https://picsum.photos/seed/mars-${i}-${Math.random()}/1024/1024`;
+        updateCardImageAtIndex(i, demoImgUrl, 4);
+    }
 
     updateStatus("Demo Layout Complete!", 100);
     toggleLoading(false);
@@ -496,6 +646,10 @@ function resetUI() {
     const cardsWorkspace = document.getElementById('cardsWorkspace');
     if (cardsWorkspace) {
         cardsWorkspace.innerHTML = '';
+    }
+    const titleEl = document.getElementById('comicPageTitle');
+    if (titleEl) {
+        titleEl.style.display = 'none';
     }
     if (comicPage) {
         comicPage.style.display = 'none';

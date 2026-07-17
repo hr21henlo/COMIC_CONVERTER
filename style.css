@@ -48,7 +48,7 @@ body {
 #app {
   max-width: 1360px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 2.5rem 1.5rem 0 1.5rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -2203,170 +2203,6 @@ textarea:focus {
   transition: transform 0.35s var(--comic-bounce), filter 0.28s;
 }
 
-/* --- STUDENT HISTORY VISUALIZER MODAL STYLES --- */
-.student-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(8px);
-  z-index: 99999;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 2rem;
-  overflow-y: auto;
-}
-
-.student-modal-content {
-  background: var(--c-white);
-  border: var(--comic-border);
-  width: 100%;
-  max-width: 1160px;
-  margin: auto;
-  padding: 3.5rem 2.5rem;
-  position: relative;
-  box-shadow: 10px 10px 0px var(--c-black), 20px 20px 0px var(--c-yellow);
-  animation: modalPop 0.5s var(--comic-bounce) both;
-}
-
-.student-workspace {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.student-input-panel {
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 2;
-}
-
-/* 3-Panel Comic Canvas */
-.student-comic-canvas {
-  background: #ffffff;
-  border: 4px solid var(--c-black);
-  padding: 30px;
-  box-shadow: 8px 8px 0px var(--c-black);
-  position: relative;
-  overflow: hidden;
-  background-image: radial-gradient(rgba(0, 0, 0, 0.02) 1.5px, transparent 1.5px);
-  background-size: 10px 10px;
-}
-
-.student-comic-title {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
-  letter-spacing: 2px;
-  color: var(--c-yellow);
-  text-align: center;
-  text-transform: uppercase;
-  margin-bottom: 28px;
-  line-height: 1.15;
-  -webkit-text-stroke: 2.2px var(--c-black);
-  text-shadow: 4px 4px 0px var(--c-black);
-  transform: rotate(-1deg);
-  transition: transform 0.28s var(--comic-bounce);
-}
-
-.student-comic-title:hover {
-  transform: scale(1.03) rotate(0.5deg) skewX(-2deg);
-}
-
-.student-panels-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
-}
-
-.student-panel-box {
-  background: var(--c-white);
-  border: 4px solid var(--c-black);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  box-shadow: 5px 5px 0px var(--c-black);
-  overflow: hidden;
-  transition: transform 0.3s var(--comic-bounce), box-shadow 0.3s;
-}
-
-.student-panel-box:hover {
-  transform: scale(1.035) rotate(1deg) !important;
-  z-index: 10;
-  box-shadow: 7px 7px 0px var(--c-black);
-}
-
-/* Panel rotation slants */
-.student-panel-box:nth-child(1) { transform: rotate(-0.8deg); }
-.student-panel-box:nth-child(2) { transform: rotate(1.2deg); }
-.student-panel-box:nth-child(3) { transform: rotate(-0.6deg); }
-
-.student-panel-img-box {
-  width: 100%;
-  aspect-ratio: 1.2 / 1;
-  border-bottom: 4px solid var(--c-black);
-  overflow: hidden;
-  background: var(--c-cream);
-  position: relative;
-}
-
-.student-panel-img-box img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.student-panel-caption {
-  padding: 16px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 800;
-  line-height: 1.5;
-  color: var(--c-black);
-  background: var(--c-white);
-  text-transform: uppercase;
-  position: relative;
-  border-top: none;
-  flex-grow: 1;
-}
-
-/* Narration marker look */
-.student-panel-caption::before {
-  content: 'CHAPTER NARRATION';
-  position: absolute;
-  top: -12px;
-  left: 12px;
-  background: var(--c-black);
-  color: var(--c-white);
-  padding: 1px 8px;
-  font-family: 'Bangers', cursive;
-  font-size: 0.78rem;
-  letter-spacing: 0.8px;
-  border: 2px solid var(--c-black);
-}
-
-.student-panel-box:nth-child(1) .student-panel-caption { background-color: var(--c-yellow); }
-.student-panel-box:nth-child(2) .student-panel-caption { background-color: var(--c-cyan); }
-.student-panel-box:nth-child(3) .student-panel-caption { background-color: var(--c-magenta); }
-
-.student-panel-box:nth-child(1) .student-panel-caption::before { content: 'PART I: NARRATIVE'; }
-.student-panel-box:nth-child(2) .student-panel-caption::before { content: 'PART II: CLIMAX'; }
-.student-panel-box:nth-child(3) .student-panel-caption::before { content: 'PART III: AFTERMATH'; }
-
-/* Responsive Grid */
-@media (max-width: 768px) {
-  .student-panels-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-  .student-modal-content {
-    padding: 2rem 1.5rem;
-  }
-}
 
 .comic-panel:hover {
   transform: scale(1.035) rotate(1.2deg) !important;
@@ -2594,3 +2430,252 @@ textarea:focus {
   background: #ffd000;
   color: #000000;
 }
+
+/* --- MULTI-PANEL COMIC GRID SYSTEM & OVERLAYS --- */
+
+.comic-page-canvas {
+  background-color: #fdfcf9 !important; /* Authentic comic paper off-white */
+  border: 8px double #000000 !important;
+  border-radius: 4px;
+  padding: 30px !important;
+  box-shadow: 12px 12px 0px #000000 !important;
+  position: relative;
+  overflow: visible;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+  box-sizing: border-box;
+}
+
+.comic-page-canvas * {
+  box-sizing: border-box;
+}
+
+/* Comic Grid Layout Configurations */
+.layout-grid-2x2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  grid-template-rows: repeat(2, 1fr) !important;
+  gap: 20px !important;
+}
+
+.layout-wide-top {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-rows: 1.8fr 1.3fr !important;
+  gap: 20px !important;
+}
+
+.layout-large-left {
+  display: grid !important;
+  grid-template-columns: 1.2fr 1.8fr !important;
+  grid-template-rows: repeat(3, 1fr) !important;
+  gap: 20px !important;
+}
+
+.layout-wide-bottom {
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  grid-template-rows: 1.3fr 1.8fr !important;
+  gap: 20px !important;
+}
+
+.layout-alternating {
+  display: grid !important;
+  grid-template-columns: repeat(6, 1fr) !important;
+  grid-template-rows: 1fr 1fr !important;
+  gap: 20px !important;
+}
+
+/* Comic Panel Base */
+.comic-panel-container {
+  position: relative !important;
+  overflow: hidden !important;
+  border: 4px solid #000000 !important;
+  box-shadow: 5px 5px 0px #000000 !important;
+  background: var(--c-cream);
+  transition: transform 0.3s var(--comic-bounce), box-shadow 0.3s;
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+}
+
+.comic-panel-container:hover {
+  transform: scale(1.025) rotate(0.5deg);
+  box-shadow: 7px 7px 0px #000000;
+  z-index: 10;
+}
+
+/* Narration Box Overlay */
+.narration-box {
+  position: absolute !important;
+  background: #fff6bd !important; /* Classic bright yellow comic caption box */
+  border: 3px solid #000000 !important;
+  padding: 5px 10px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  font-size: 0.76rem !important;
+  line-height: 1.3 !important;
+  color: #000000 !important;
+  text-transform: uppercase !important;
+  max-width: 60% !important;
+  max-height: 38% !important;   /* Never consume more than 38% of panel height */
+  overflow: hidden !important;
+  box-shadow: 3px 3px 0px #000000 !important;
+  z-index: 5 !important;
+  transform: rotate(-0.5deg);
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+}
+
+/* Speech Dialogue Bubble Overlay */
+.speech-bubble-overlay {
+  position: absolute !important;
+  background: #ffffff !important;
+  border: 3px solid #000000 !important;
+  border-radius: 14px !important;
+  padding: 6px 10px !important;
+  font-family: 'Bangers', cursive !important;
+  font-size: 0.82rem !important;
+  letter-spacing: 0.5px !important;
+  color: #000000 !important;
+  text-transform: uppercase !important;
+  max-width: 44% !important;      /* Stay firmly in corner — never cross panel center */
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.15) !important;
+  z-index: 5 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  line-height: 1.2 !important;
+}
+
+.speech-bubble-overlay .speech-speaker {
+  font-size: 0.72rem !important;
+  color: var(--c-magenta) !important;
+  margin-bottom: 2px !important;
+  font-family: 'Outfit', sans-serif !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px !important;
+}
+
+.speech-bubble-overlay .speech-text {
+  line-height: 1.25 !important;
+}
+
+/* Speech Bubble Pointer Tails */
+.bubble-bottom-right::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -11px !important;
+  left: 24px !important;
+  border-width: 11px 8px 0 !important;
+  border-style: solid !important;
+  border-color: #ffffff transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 1 !important;
+}
+.bubble-bottom-right::before {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -15px !important;
+  left: 23px !important;
+  border-width: 15px 9px 0 !important;
+  border-style: solid !important;
+  border-color: #000000 transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 0 !important;
+}
+
+.bubble-bottom-left::after {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -11px !important;
+  right: 24px !important;
+  border-width: 11px 8px 0 !important;
+  border-style: solid !important;
+  border-color: #ffffff transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 1 !important;
+}
+.bubble-bottom-left::before {
+  content: '' !important;
+  position: absolute !important;
+  bottom: -15px !important;
+  right: 23px !important;
+  border-width: 15px 9px 0 !important;
+  border-style: solid !important;
+  border-color: #000000 transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 0 !important;
+}
+
+.bubble-top-right::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -11px !important;
+  left: 24px !important;
+  border-width: 0 8px 11px !important;
+  border-style: solid !important;
+  border-color: #ffffff transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 1 !important;
+}
+.bubble-top-right::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -15px !important;
+  left: 23px !important;
+  border-width: 0 9px 15px !important;
+  border-style: solid !important;
+  border-color: #000000 transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 0 !important;
+}
+
+.bubble-top-left::after {
+  content: '' !important;
+  position: absolute !important;
+  top: -11px !important;
+  right: 24px !important;
+  border-width: 0 8px 11px !important;
+  border-style: solid !important;
+  border-color: #ffffff transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 1 !important;
+}
+.bubble-top-left::before {
+  content: '' !important;
+  position: absolute !important;
+  top: -15px !important;
+  right: 23px !important;
+  border-width: 0 9px 15px !important;
+  border-style: solid !important;
+  border-color: #000000 transparent !important;
+  display: block !important;
+  width: 0 !important;
+  z-index: 0 !important;
+}
+
+@media (max-width: 768px) {
+  .comic-page-canvas {
+    padding: 16px !important;
+    border-width: 4px !important;
+  }
+  .layout-grid-2x2, .layout-wide-top, .layout-large-left, .layout-wide-bottom, .layout-alternating {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 16px !important;
+  }
+  .comic-panel-container {
+    min-height: 280px !important;
+    aspect-ratio: 1.2 / 1 !important;
+  }
+}
+

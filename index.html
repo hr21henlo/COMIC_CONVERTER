@@ -618,32 +618,10 @@
           }
         });
       })();
-
-      // --- INFINITE SCROLL MARQUEE GENERATOR ---
-      (function() {
-        document.addEventListener('DOMContentLoaded', () => {
-          const track1 = document.getElementById('marqueeTrack1');
-          const track2 = document.getElementById('marqueeTrack2');
-          if (track1 && track2) {
-            const stickerCount = 10;
-            let trackHtml = '';
-            for (let i = 0; i < stickerCount; i++) {
-              trackHtml += `<img src="./comicGEN sticker.png" class="logo-sticker" alt="ComicGen Logo" />`;
-            }
-            track1.innerHTML = trackHtml;
-            track2.innerHTML = trackHtml;
-          }
-        });
-      })();
     </script>
 
-    <header class="comic-header-bar">
-      <div class="logo-marquee">
-        <div class="logo-marquee-track" id="marqueeTrack1"></div>
-        <div class="logo-marquee-track" id="marqueeTrack2"></div>
-      </div>
-      <button id="audioToggleBtn" class="btn-audio-toggle playing" style="position: absolute; right: 25px; z-index: 1010;">🔊 AUDIO ON</button>
-    </header>
+    <!-- Floating Audio Control Button -->
+    <button id="audioToggleBtn" class="btn-audio-toggle playing" style="position: fixed; top: 16px; right: 16px; z-index: 10000; box-shadow: 4px 4px 0px #000; transform: rotate(-1.5deg);">🔊 AUDIO ON</button>
 
     <div id="app">
       <main>
@@ -729,7 +707,7 @@
               <h4 class="input-title"><span>1. CHOOSE YOUR ART THEME</span></h4>
               
               <!-- Retro Style Card Selectors -->
-              <div class="style-selector-grid">
+              <div class="style-selector-grid" style="grid-template-columns: repeat(3, 1fr);">
                 <label class="style-card comic">
                   <input type="radio" name="characterStyle" value="typical comic character" checked="checked" />
                   <div class="style-card-content">
@@ -756,21 +734,12 @@
                     <div class="style-desc">Charming pencil-sketch doodle</div>
                   </div>
                 </label>
-                
-                <label class="style-card custom">
-                  <input type="radio" name="characterStyle" value="graphical design style" />
-                  <div class="style-card-content">
-                    <div class="style-badge">GRAPHIC</div>
-                    <div class="style-name">GRAPHICAL STYLE</div>
-                    <div class="style-desc">Sleek vector layouts and clean lines</div>
-                  </div>
-                </label>
               </div>
  
-              <h4 class="input-title"><span>2. CHOOSE NUMBER OF CARDS</span></h4>
-              <div class="style-selector-grid" id="cardCountGrid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 2.2rem;">
+              <h4 class="input-title" style="display: none;"><span>2. CHOOSE NUMBER OF CARDS</span></h4>
+              <div class="style-selector-grid" id="cardCountGrid" style="display: none;">
                 <label class="style-card card-count-btn">
-                  <input type="radio" name="cardCount" value="1" checked="checked" />
+                  <input type="radio" name="cardCount" value="1" />
                   <div class="style-card-content">
                     <div class="style-badge">MINIMAL</div>
                     <div class="style-name">1 CARD</div>
@@ -793,9 +762,17 @@
                     <div class="style-desc">Chronological detailed analysis</div>
                   </div>
                 </label>
+                <label class="style-card card-count-btn">
+                  <input type="radio" name="cardCount" value="4" checked="checked" />
+                  <div class="style-card-content">
+                    <div class="style-badge">COMIC GRID</div>
+                    <div class="style-name">4 PANELS</div>
+                    <div class="style-desc">Standard 4-panel comic strip</div>
+                  </div>
+                </label>
               </div>
 
-              <h4 class="input-title"><span>3. WRITE THE SCENARIO</span></h4>
+              <h4 class="input-title"><span>2. WRITE THE SCENARIO</span></h4>
               <textarea id="articleInput" placeholder="WRITE YOUR LEGENDARY STORY HERE... (MINIMUM 100 WORDS RECOMMENDED FOR ACTION-PACKED RESULTS)"></textarea>
               
               <div class="action-bar">
@@ -837,7 +814,8 @@
               
               <!-- Comic News Card Page Layout Workspace -->
               <div id="comicPage" class="comic-page-canvas" style="display: none; width: 100%;">
-                <div id="cardsWorkspace" class="cards-workspace" style="display: flex; flex-direction: column; gap: 45px; width: 100%;">
+                <h2 id="comicPageTitle" class="news-card-headline" style="width: 100%; margin-top: 0; margin-bottom: 25px; display: block; border-bottom: 4px solid #000; padding-bottom: 12px;">COMICGEN STRIP</h2>
+                <div id="cardsWorkspace" class="cards-workspace" style="width: 100%;">
                   <!-- Dynamically generated cards will be injected here -->
                 </div>
               </div>
@@ -913,15 +891,6 @@
       </footer>
     </div>
 
-    <!-- Floating approved stamp in the bottom-left corner, redirects to standalone student page -->
-    <a href="./student.html" class="comic-code-badge" style="text-decoration: none;">
-      <div class="badge-inner">
-        <span>★ STUDENTS ★</span>
-        <strong>SECTION</strong>
-        <span>CLICK</span>
-        <span class="auth">HERE</span>
-      </div>
-    </a>
 
     <script type="module" src="/main.js"></script>
   </body>
