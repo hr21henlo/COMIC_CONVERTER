@@ -67,11 +67,11 @@ exports.handler = async (event, context) => {
             ${text}
         `;
 
-        // Active 2026 models to try
+        // Valid Gemini models to try (in order of preference)
         const modelsToTry = [
             "gemini-2.5-flash",
-            "gemini-3-flash",
-            "gemini-2.5-flash-lite"
+            "gemini-2.5-flash-lite",
+            "gemini-1.5-flash"
         ];
 
         let responseText = "";
@@ -82,16 +82,27 @@ exports.handler = async (event, context) => {
             try {
                 console.log(`🤖 Backend trying model: ${modelName}`);
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-                
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [{ text: prompt }]
-                        }]
-                    })
-                });
+
+                // Use AbortController to enforce a per-request timeout
+                // (Netlify free tier has a 10s function timeout)
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                let response;
+                try {
+                    response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [{ text: prompt }]
+                            }]
+                        }),
+                        signal: controller.signal
+                    });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
 
                 if (!response.ok) {
                     const errorDetail = await response.text();
