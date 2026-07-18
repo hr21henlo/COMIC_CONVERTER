@@ -18,33 +18,37 @@ exports.handler = async (event, context) => {
         const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
 
         if (!apiKey) {
-            return { statusCode: 500, headers, body: JSON.stringify({ error: "Gemini API key is not configured on Netlify." }) };
+            return { statusCode: 500, headers, body: JSON.stringify({ error: "Gemini API key not configured." }) };
         }
 
-        const prompt = `You are a comic book editor. Convert the article below into exactly ${cardCount} comic news card(s) in "${style}" style.
+        // System instruction forces JSON-only output at the model level
+        const systemInstruction = {
+            parts: [{ text: "You are a JSON-only API. You MUST respond with a single raw JSON object. Never use markdown, code fences, or any explanatory text. Only output the JSON." }]
+        };
 
-IMPORTANT: Respond with ONLY a raw JSON object. No markdown, no code fences, no explanation. Just the JSON.
+        const userPrompt = `Convert this news article into ${cardCount} comic card(s).
 
-Required JSON format:
-{"cards":[{"headline":"string","brief1":"string","brief2":"string","imagePrompt":"string"}]}
+Return ONLY this JSON structure (fill in the values):
+{"cards":[{"headline":"...","brief1":"...","brief2":"...","imagePrompt":"..."}]}
 
 Rules:
-- headline: dramatic comic-book headline, include key numbers/facts
-- brief1: 2-3 sentence pulp-narrator setup (max 40 words), keep key facts
-- brief2: 2-3 sentence pulp-narrator continuation (max 40 words), keep metrics
-- imagePrompt: visual scene in ${style} style, NO text/letters/numbers in the image
+- headline: punchy comic-book headline with key facts/numbers
+- brief1: 2-3 sentences, pulp-narrator style, max 45 words, include dates/metrics  
+- brief2: 2-3 sentences, pulp-narrator continuation, max 45 words
+- imagePrompt: visual scene in "${style}" art style, absolutely NO text or numbers in the described image
+- If ${cardCount} > 1, include ${cardCount} objects in the cards array
 
-ARTICLE:
-${text}`;
+ARTICLE: ${text}`;
 
         const modelsToTry = ["gemini-1.5-flash", "gemini-2.5-flash"];
         let rawText = "";
         let success = false;
         let lastError = null;
+        let debugInfo = {};
 
         for (const modelName of modelsToTry) {
             try {
-                console.log(`🤖 Trying model: ${modelName}`);
+                console.log(`🤖 Trying: ${modelName}`);
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
 
                 const controller = new AbortController();
@@ -56,11 +60,8 @@ ${text}`;
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: {
-                                temperature: 0.7,
-                                maxOutputTokens: 1024
-                            }
+                            system_instruction: systemInstruction,
+                            contents: [{ parts: [{ text: userPrompt }] }]
                         }),
                         signal: controller.signal
                     });
@@ -70,58 +71,68 @@ ${text}`;
 
                 if (!response.ok) {
                     const errText = await response.text();
-                    throw new Error(`API ${response.status}: ${errText.substring(0, 200)}`);
+                    debugInfo[modelName] = `HTTP ${response.status}: ${errText.substring(0, 150)}`;
+                    throw new Error(`API ${response.status}: ${errText.substring(0, 150)}`);
                 }
 
                 const data = await response.json();
                 const candidate = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
                 if (candidate) {
                     rawText = candidate;
                     success = true;
-                    console.log(`✅ Got response from ${modelName}, length: ${rawText.length}`);
+                    console.log(`✅ Got text from ${modelName} (${rawText.length} chars). Preview: ${rawText.substring(0, 80)}`);
                     break;
                 } else {
-                    throw new Error("Empty or invalid Gemini response structure");
+                    const reason = data?.candidates?.[0]?.finishReason || JSON.stringify(data).substring(0, 100);
+                    debugInfo[modelName] = `No candidate text. finishReason: ${reason}`;
+                    throw new Error(`No text in response. finishReason: ${reason}`);
                 }
             } catch (err) {
-                console.warn(`⚠️ Model ${modelName} failed: ${err.message}`);
+                if (err.name === 'AbortError') {
+                    debugInfo[modelName] = 'Timed out (8.5s)';
+                    console.warn(`⏱️ ${modelName} timed out`);
+                } else {
+                    console.warn(`⚠️ ${modelName} failed: ${err.message}`);
+                }
                 lastError = err;
             }
         }
 
         if (!success) {
-            throw lastError || new Error("All Gemini models failed.");
+            throw new Error(`All models failed. Details: ${JSON.stringify(debugInfo)}`);
         }
 
         // --- Robust JSON extraction ---
-        // 1. Strip markdown code fences (```json ... ``` or ``` ... ```)
+        // Strip markdown fences if model ignored instructions
         let cleaned = rawText
             .replace(/^```(?:json)?\s*/i, '')
             .replace(/\s*```\s*$/i, '')
             .trim();
 
-        // 2. Extract the JSON object using balanced brace matching
         const start = cleaned.indexOf('{');
         const end = cleaned.lastIndexOf('}');
-        if (start === -1 || end === -1) {
-            console.error("❌ No JSON object found in response. Raw:", rawText.substring(0, 300));
-            throw new Error("Gemini did not return a JSON object.");
-        }
-        const jsonString = cleaned.slice(start, end + 1);
 
-        // 3. Parse
+        if (start === -1 || end === -1) {
+            // Include preview of what Gemini actually said for debugging
+            const preview = rawText.substring(0, 200).replace(/\n/g, ' ');
+            throw new Error(`No JSON in response. Gemini said: "${preview}..."`);
+        }
+
+        const jsonStr = cleaned.slice(start, end + 1);
         let parsed;
         try {
-            parsed = JSON.parse(jsonString);
+            parsed = JSON.parse(jsonStr);
         } catch (parseErr) {
-            console.error("❌ JSON parse failed. Raw excerpt:", jsonString.substring(0, 400));
-            throw new Error(`JSON parse error: ${parseErr.message}`);
+            const preview = jsonStr.substring(0, 200).replace(/\n/g, ' ');
+            throw new Error(`JSON parse error at: ${parseErr.message}. Content: "${preview}"`);
         }
 
-        if (!parsed.cards || !Array.isArray(parsed.cards)) {
-            throw new Error("Response JSON missing 'cards' array.");
+        if (!parsed.cards || !Array.isArray(parsed.cards) || parsed.cards.length === 0) {
+            throw new Error(`Missing 'cards' array in JSON. Got keys: ${Object.keys(parsed).join(', ')}`);
         }
 
+        console.log(`✅ Success: ${parsed.cards.length} card(s) generated`);
         return { statusCode: 200, headers, body: JSON.stringify(parsed) };
 
     } catch (error) {
@@ -129,7 +140,7 @@ ${text}`;
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: error.message || "Failed to generate news card" })
+            body: JSON.stringify({ error: error.message })
         };
     }
 };
