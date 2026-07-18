@@ -202,15 +202,14 @@ async function generateNewsCard(text, style, numCards = 1) {
         let result;
         const modelsToTry = [
             "gemini-2.5-flash",
-            "gemini-3-flash",
-            "gemini-2.5-flash-lite"
+            "gemini-1.5-flash"
         ];
         
         let lastError = null;
         for (const modelName of modelsToTry) {
             try {
                 console.log(`🤖 Trying model: ${modelName}...`);
-                const model = genAI.getGenerativeModel({ model: modelName });
+                const model = genAI.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: "application/json" } });
                 result = await model.generateContent(prompt);
                 if (result) {
                     console.log(`✅ Successfully generated using model: ${modelName}`);
@@ -227,8 +226,11 @@ async function generateNewsCard(text, style, numCards = 1) {
         }
 
         const response = await result.response;
-        const textResult = response.text();
+        let textResult = response.text();
         console.log("🤖 Gemini Response:", textResult);
+        
+        // Strip markdown code fences if Gemini wraps JSON in ```json ... ```
+        textResult = textResult.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
         
         const jsonMatch = textResult.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error("Could not parse storyboard JSON from Gemini response");
