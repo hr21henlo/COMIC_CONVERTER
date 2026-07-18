@@ -71,10 +71,10 @@ exports.handler = async (event, context) => {
             ${text}
         `;
 
-        // Updated production models 
+        // Valid Gemini production models
         const modelsToTry = [
-            "gemini-3.5-flash",
-            "gemini-3.1-flash-lite"
+            "gemini-1.5-flash",
+            "gemini-2.5-flash"
         ];
 
         let responseText = "";
