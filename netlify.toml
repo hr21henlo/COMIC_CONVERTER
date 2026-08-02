@@ -4,3 +4,10 @@
 
 [functions]
   directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+[dev]
+  framework = "#custom"
+  command = "npm run dev:vite"
+  targetPort = 3000
+  port = 8889

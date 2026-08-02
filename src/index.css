@@ -1,0 +1,362 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Bebas+Neue&family=Bangers&family=Comic+Neue:wght@700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+.font-comic {
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-weight: 700;
+}
+
+.font-bangers {
+  font-family: 'Bangers', system-ui, cursive, sans-serif;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+/* ═══════════════════════════════════════════════════════════
+   NEOBRUTALIST CUSTOM SCROLLBARS
+═══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 16px;
+  height: 16px;
+}
+::-webkit-scrollbar-track {
+  background: #fef08a;
+  border-left: 3px solid black;
+}
+::-webkit-scrollbar-thumb {
+  background: #ef4444;
+  border: 3px solid black;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #dc2626;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NEOBRUTALISM DESIGN TOKENS
+   Bold borders, chunky shadows, raw personality
+═══════════════════════════════════════════════════════════ */
+:root {
+  /* Neobrutalism core palette */
+  --nb-yellow: #FFE66D;
+  --nb-coral: #FF6B6B;
+  --nb-mint: #06D6A0;
+  --nb-blue: #4361EE;
+  --nb-purple: #9B5DE5;
+  --nb-orange: #F77F00;
+  --nb-bg: #FFFBF0;
+  --nb-secondary-bg: #F0EBD8;
+  --nb-black: #0A0A0A;
+  --nb-white: #FFFFFF;
+
+  /* Neobrutalism borders */
+  --nb-border: 2px solid #0A0A0A;
+  --nb-border-thick: 3px solid #0A0A0A;
+  --nb-border-color: #0A0A0A;
+
+  /* Neobrutalism shadows */
+  --nb-shadow-sm: 3px 3px 0px #0A0A0A;
+  --nb-shadow: 4px 4px 0px #0A0A0A;
+  --nb-shadow-md: 5px 5px 0px #0A0A0A;
+  --nb-shadow-lg: 6px 6px 0px #0A0A0A;
+  --nb-shadow-xl: 8px 8px 0px #0A0A0A;
+
+  /* Neobrutalism typography */
+  --nb-font: 'Space Grotesk', 'Arial Black', system-ui, sans-serif;
+
+  /* Neobrutalism radius — intentionally small (brutalism is angular) */
+  --nb-radius-sm: 3px;
+  --nb-radius: 6px;
+  --nb-radius-lg: 10px;
+}
+
+/* Neobrutalism button base — chunky, pressable */
+.nb-btn {
+  font-family: var(--nb-font);
+  font-weight: 700;
+  border: var(--nb-border-thick);
+  border-color: var(--nb-border-color);
+  box-shadow: var(--nb-shadow);
+  transition: transform 0.08s ease, box-shadow 0.08s ease;
+  cursor: pointer;
+  border-radius: var(--nb-radius);
+}
+.nb-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--nb-shadow-md);
+}
+.nb-btn:active {
+  transform: translate(3px, 3px);
+  box-shadow: none;
+}
+
+/* Neobrutalism card */
+.nb-card {
+  border: var(--nb-border-thick);
+  border-color: var(--nb-border-color);
+  box-shadow: var(--nb-shadow-md);
+  border-radius: var(--nb-radius-lg);
+  background: var(--nb-white);
+}
+
+/* Neobrutalism input */
+.nb-input {
+  font-family: var(--nb-font);
+  border: var(--nb-border-thick);
+  border-color: var(--nb-border-color);
+  border-radius: var(--nb-radius);
+  background: var(--nb-white);
+  outline: none;
+  transition: box-shadow 0.1s ease;
+}
+.nb-input:focus {
+  box-shadow: var(--nb-shadow);
+}
+
+@theme inline {
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    color-scheme: dark;
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* ---- Comify entrance animations ---- */
+@keyframes comify-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes comify-line-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes comify-line-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.comify-fade-up {
+  opacity: 0;
+  animation: comify-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.comify-line-x {
+  transform-origin: left center;
+  animation: comify-line-x 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.comify-line-y {
+  transform-origin: top center;
+  animation: comify-line-y 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ---- Hero intro: greetings sliding bottom -> top ---- */
+@keyframes hero-word-in {
+  from {
+    transform: translateY(110%);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.hero-word {
+  will-change: transform, opacity;
+  animation: hero-word-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes hero-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(5px);
+  }
+}
+
+.hero-bounce {
+  animation: hero-bounce 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-word {
+    animation-duration: 0.01ms;
+  }
+  .hero-bounce {
+    animation: none;
+  }
+}
