@@ -1,0 +1,1 @@
+COMIC CONVERTER Comic Converter bascailly for GenZs , who is not very much into reading prolonged articles , just wanna be very quick in everthing specailly in reading NEWS ARTICLES. In Comic Converter , it translates the article into simpler prompts and convert it into comic strips. GenZs can try different types of charcater as per there choice. More features anoon!! yayayay
