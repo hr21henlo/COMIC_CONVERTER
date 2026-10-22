@@ -1,19 +1,17 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { LayoutGrid, MessageCircle, Plus } from 'lucide-react'
+import { MessageCircle, Plus } from 'lucide-react'
 
 interface LeftVerticalBarProps {
   isNewComicPanelOpen: boolean
   onToggleNewComicPanel: () => void
-  onOpenLayoutBuilder: () => void
   onOpenFeedback: () => void
 }
 
 export function LeftVerticalBar({
   isNewComicPanelOpen,
   onToggleNewComicPanel,
-  onOpenLayoutBuilder,
   onOpenFeedback,
 }: LeftVerticalBarProps) {
   return (
@@ -54,18 +52,6 @@ export function LeftVerticalBar({
 
       {/* Divider */}
       <div style={{ width: 32, height: 3, background: '#0A0A0A', borderRadius: 2 }} />
-
-      {/* ─── L: Layout Builder ─── */}
-      <BarButton
-        id="nb-layout-btn"
-        label="Layout"
-        color="#4361EE"
-        textColor="#FFFFFF"
-        onClick={onOpenLayoutBuilder}
-        title="Layout Builder"
-      >
-        <LayoutGrid size={20} strokeWidth={2.5} color="#FFFFFF" />
-      </BarButton>
 
       {/* ─── F: Feedback ─── */}
       <BarButton

@@ -29,14 +29,33 @@ export interface GenerationState {
   status: 'idle' | 'generating-script' | 'generating-images' | 'done' | 'error'
   cards: ComicCard[]
   error: string | null
+  factSheet?: Record<string, unknown> | null
 }
 
 // ─── API helpers ──────────────────────────────────────────────────────────────
-async function fetchComicScript(text: string, style: string, numCards: number): Promise<ComicCard[]> {
+interface ComicScriptResult {
+  cards: ComicCard[]
+  factSheet: Record<string, unknown> | null
+}
+
+async function fetchComicScript(
+  text: string,
+  style: string,
+  numCards: number,
+  factSheet?: Record<string, unknown> | null
+): Promise<ComicScriptResult> {
+  const payload: Record<string, unknown> = {
+    text, style, numCards, num_panels: numCards, panel_count: numCards
+  }
+  // On regeneration, send the cached fact-sheet so the backend skips Pass 1
+  if (factSheet) {
+    payload.factSheet = factSheet
+  }
+
   const res = await fetch('/.netlify/functions/comic-converter', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, style, numCards, num_panels: numCards, panel_count: numCards }),
+    body: JSON.stringify(payload),
   })
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
@@ -46,7 +65,10 @@ async function fetchComicScript(text: string, style: string, numCards: number): 
   if (!data?.cards || !Array.isArray(data.cards) || data.cards.length === 0) {
     throw new Error('No comic cards returned from Gemini script generator')
   }
-  return data.cards
+  return {
+    cards: data.cards,
+    factSheet: data.factSheet || null
+  }
 }
 
 async function fetchComicImage(imagePrompt: string, style: string): Promise<string> {
@@ -165,7 +187,24 @@ export function ComifyExperience() {
     status: 'idle',
     cards: [],
     error: null,
+    factSheet: null,
   })
+
+  // ── Cached Fact-Sheet ─────────────────────────────────────────────────────────
+  // Persists across regenerations so Pass 1 only runs once per article.
+  // Cleared when the user changes the input text (new article).
+  const [cachedFactSheet, setCachedFactSheet] = useState<Record<string, unknown> | null>(null)
+  const prevInputRef = useRef<string>('')
+
+  useEffect(() => {
+    // Clear cached fact-sheet when the article text changes
+    if (inputText !== prevInputRef.current) {
+      prevInputRef.current = inputText
+      if (cachedFactSheet) {
+        setCachedFactSheet(null)
+      }
+    }
+  }, [inputText, cachedFactSheet])
 
   // ── Generate Handler ──────────────────────────────────────────────────────────
   const handleGenerate = useCallback(async () => {
@@ -174,13 +213,22 @@ export function ComifyExperience() {
     setGeneration({ status: 'generating-script', cards: [], error: null })
 
     try {
-      const cards = await fetchComicScript(inputText, selectedStyle, numPanels)
+      const { cards, factSheet } = await fetchComicScript(inputText, selectedStyle, numPanels, cachedFactSheet)
+
+      // Cache the fact-sheet for future regenerations of the same article
+      if (factSheet && !cachedFactSheet) {
+        setCachedFactSheet(factSheet)
+      }
 
       const cardsWithLoading = cards.map((c) => ({ ...c, imageLoading: true }))
-      setGeneration({ status: 'generating-images', cards: cardsWithLoading, error: null })
+      setGeneration({ status: 'generating-images', cards: cardsWithLoading, error: null, factSheet })
 
       const updatedCards = await Promise.all(
         cardsWithLoading.map(async (card, idx) => {
+          // Stagger requests slightly to avoid burst concurrency limits
+          if (idx > 0) {
+            await new Promise(r => setTimeout(r, idx * 300))
+          }
           let retries = 3
           let imgUrl: string | null = null
           let lastErr: string | null = null
@@ -191,15 +239,30 @@ export function ComifyExperience() {
               retries--
               lastErr = err instanceof Error ? err.message : 'Image error'
               if (retries > 0) {
-                await new Promise(r => setTimeout(r, 1000))
+                await new Promise(r => setTimeout(r, 1200))
               }
             }
           }
-          return { ...card, imageUrl: imgUrl, imageLoading: false, imageError: imgUrl ? null : (lastErr || 'NVIDIA FLUX failed') }
+
+          const resolvedCard = {
+            ...card,
+            imageUrl: imgUrl,
+            imageLoading: false,
+            imageError: imgUrl ? null : (lastErr || 'NVIDIA FLUX failed')
+          }
+
+          // Progressively update card in state as it finishes rendering
+          setGeneration(prev => {
+            const nextCards = [...prev.cards]
+            nextCards[idx] = resolvedCard
+            return { ...prev, cards: nextCards }
+          })
+
+          return resolvedCard
         })
       )
 
-      const finalGen: GenerationState = { status: 'done', cards: updatedCards, error: null }
+      const finalGen: GenerationState = { status: 'done', cards: updatedCards, error: null, factSheet: factSheet }
       setGeneration(finalGen)
       setHistory((prev) => [finalGen, ...prev])
     } catch (err: unknown) {
@@ -208,7 +271,7 @@ export function ComifyExperience() {
     } finally {
       stopTimer()
     }
-  }, [inputText, selectedStyle, numPanels, startTimer, stopTimer])
+  }, [inputText, selectedStyle, numPanels, startTimer, stopTimer, cachedFactSheet])
 
   // ── Translate Handler ─────────────────────────────────────────────────────────
   const handleTranslatePanel = useCallback(async (panelIndex: number, targetLanguage: string) => {
@@ -276,11 +339,10 @@ export function ComifyExperience() {
 
       {/* ── Stage 2: Main Generator View ── */}
       <div className="relative flex w-full flex-1 border-t-[4px] border-black">
-        {/* ── Left Vertical Icon Bar (+ L F) ── */}
+        {/* ── Left Vertical Icon Bar (+ F) ── */}
           <LeftVerticalBar
             isNewComicPanelOpen={isNewComicPanelOpen}
             onToggleNewComicPanel={() => setIsNewComicPanelOpen(prev => !prev)}
-            onOpenLayoutBuilder={() => setIsComicLayoutBuilderOpen(true)}
             onOpenFeedback={() => setIsFeedbackOpen(true)}
           />
 

@@ -6,15 +6,19 @@ export function SpeechBubble({
   style = {}
 }) {
   if (!text) return null
+  const cleanText = text.replace(/^["']|["']$/g, '').trim()
 
   return (
     <div
-      className={`relative inline-block bg-white border-2 border-black rounded-xl px-2.5 py-1.5 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] z-20 max-w-[70%] ${className}`}
+      className={`relative inline-block bg-white border-[2.5px] border-black rounded-2xl px-3.5 py-2 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] z-20 max-w-[75%] sm:max-w-[65%] ${className}`}
       style={style}
     >
       {/* Speech Text */}
-      <p className="font-['Bebas_Neue'] tracking-wider text-xs sm:text-sm leading-tight uppercase font-bold text-black m-0 select-none line-clamp-3" style={{ fontFamily: "'Bebas Neue', 'Comic Neue', cursive, sans-serif" }}>
-        "{text}"
+      <p
+        className="text-xs sm:text-[13.5px] font-bold text-black m-0 select-none leading-snug"
+        style={{ fontFamily: "'Comic Neue', 'Space Grotesk', system-ui, sans-serif", letterSpacing: '0.01em' }}
+      >
+        "{cleanText}"
       </p>
 
       {/* Clean White Triangle Pointer Tail with Black Outline */}

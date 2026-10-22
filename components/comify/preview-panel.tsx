@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   Download, ImageOff, MessageSquare, ChevronLeft,
-  ChevronRight, LayoutGrid, Maximize2, Globe, Loader2,
-  Zap, Share2,
+  ChevronRight, LayoutGrid, Maximize2, Minimize2, Globe, Loader2,
+  Zap, Share2, BookOpen,
 } from 'lucide-react'
 import type { GenerationState } from './comify-experience'
 import { SpeechBubble, BubbleType } from './SpeechBubble'
@@ -92,10 +92,10 @@ function ComicCard({
         </div>
       )}
       {/* Caption strip — compact bottom */}
-      {card.brief1 && (
+      {(card.brief1 || card.brief2) && (
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, width: '100%', zIndex: 10, background: '#FFE66D', borderTop: '2px solid #0A0A0A', padding: '2px 8px', opacity: 0.95 }}>
-          <p style={{ fontFamily: "'Comic Neue', 'Space Grotesk', cursive, sans-serif", fontWeight: 700, fontSize: 9, color: '#0A0A0A', margin: 0, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textTransform: 'uppercase' }}>
-            {card.brief1}
+          <p style={{ fontFamily: "'Comic Neue', 'Space Grotesk', cursive, sans-serif", fontWeight: 700, fontSize: 9, color: '#0A0A0A', margin: 0, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', textTransform: 'uppercase' }}>
+            {card.brief1} {card.brief2 ? `• ${card.brief2}` : ''}
           </p>
         </div>
       )}
@@ -191,16 +191,61 @@ export function PreviewPanel({
   activeLayoutId,
 }: PreviewPanelProps) {
   const [activePanelIndex, setActivePanelIndex] = useState(0)
-  const [viewMode] = useState<'single' | 'grid'>('grid')
+  const [viewMode, setViewMode] = useState<'single' | 'grid'>('single')
   const [selectedLanguage, setSelectedLanguage] = useState('hi-IN')
   const [isTranslating, setIsTranslating] = useState(false)
   const [copiedShare, setCopiedShare] = useState(false)
   const [brokenImages, setBrokenImages] = useState<Record<number, string>>({})
 
+  // Swipe gesture support for mobile/touch
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [touchEndX, setTouchEndX] = useState<number | null>(null)
+
   const { status, cards, error } = generation
   const isLoading = status === 'generating-script' || status === 'generating-images'
   const hasCards = cards.length > 0
-  const activeCard = cards[activePanelIndex] || cards[0]
+  const safePanelIndex = Math.min(activePanelIndex, Math.max(0, cards.length - 1))
+  const activeCard = cards[safePanelIndex] || cards[0]
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    setTouchEndX(e.targetTouches[0].clientX)
+  }
+
+  const handleTouchEnd = () => {
+    if (touchStartX === null || touchEndX === null) return
+    const distance = touchStartX - touchEndX
+    const isLeftSwipe = distance > 45
+    const isRightSwipe = distance < -45
+    if (isLeftSwipe && safePanelIndex < cards.length - 1) {
+      setActivePanelIndex(prev => prev + 1)
+    }
+    if (isRightSwipe && safePanelIndex > 0) {
+      setActivePanelIndex(prev => prev - 1)
+    }
+    setTouchStartX(null)
+    setTouchEndX(null)
+  }
+
+  // Keyboard arrow navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!hasCards) return
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') {
+        setActivePanelIndex(prev => Math.min(cards.length - 1, prev + 1))
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        setActivePanelIndex(prev => Math.max(0, prev - 1))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [hasCards, cards.length])
 
   const handleTranslateClick = async () => {
     if (!hasCards || isTranslating) return
@@ -241,7 +286,7 @@ export function PreviewPanel({
       className="w-full flex flex-col items-center h-[calc(100vh-150px)] max-h-[calc(100vh-150px)] overflow-hidden"
       style={{
         width: '100%',
-        maxWidth: isExpanded ? 1000 : 660,
+        maxWidth: isExpanded ? 1100 : (viewMode === 'single' ? 760 : 680),
         height: 'calc(100vh - 150px)',
         maxHeight: 'calc(100vh - 150px)',
         transition: 'max-width 0.3s ease',
@@ -374,6 +419,209 @@ export function PreviewPanel({
           </div>
         )}
 
+        {/* ── SINGLE PANEL READER (Android Comic App Style) ── */}
+        {viewMode === 'single' && hasCards && (
+          <div
+            className="w-full flex-1 min-h-0 flex flex-col bg-[#F0EBD8] overflow-hidden"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            {/* Reader Header */}
+            <div className="flex items-center justify-between px-3 py-2 border-b-4 border-black bg-[#FFFBF0] shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 bg-black border-2 border-black rounded flex items-center justify-center overflow-hidden">
+                  <img src="/comicGEN favicon.png" alt="Logo" className="w-[85%] h-[85%] object-contain" />
+                </div>
+                <span className="font-['Space_Grotesk',sans-serif] font-black text-xs sm:text-sm text-black uppercase tracking-tight">
+                  ComicGEN Reader
+                </span>
+              </div>
+
+              {/* View mode toggle */}
+              <div className="flex items-center gap-1.5 bg-black p-0.5 border-2 border-black">
+                <button
+                  id="reader-mode-single-btn"
+                  onClick={() => setViewMode('single')}
+                  className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all bg-[#FFE66D] text-black shadow-[1px_1px_0px_#0A0A0A] cursor-pointer"
+                >
+                  <BookOpen size={13} strokeWidth={2.5} />
+                  <span>Reader</span>
+                </button>
+                <button
+                  id="reader-mode-grid-btn"
+                  onClick={() => setViewMode('grid')}
+                  className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all bg-black text-white hover:text-yellow-300 cursor-pointer"
+                >
+                  <LayoutGrid size={13} strokeWidth={2.5} />
+                  <span>Grid</span>
+                </button>
+              </div>
+
+              {/* Page Badge & Expand */}
+              <div className="flex items-center gap-2">
+                <span className="font-['Space_Grotesk',sans-serif] font-black text-[11px] bg-[#FFE66D] text-black border-2 border-black px-2 py-0.5 shadow-[2px_2px_0px_#0A0A0A]">
+                  PAGE {safePanelIndex + 1} / {cards.length}
+                </span>
+                <button
+                  onClick={() => onToggleExpand(!isExpanded)}
+                  title={isExpanded ? "Collapse View" : "Expand View"}
+                  className="p-1 border-2 border-black bg-white hover:bg-yellow-300 transition-colors cursor-pointer"
+                >
+                  {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Reader Main Stage: Arrows + Comic Page */}
+            <div className="flex-1 min-h-0 relative flex items-center justify-between p-2 sm:p-4 gap-2 sm:gap-4 overflow-hidden">
+              {/* Prev Button */}
+              <button
+                id="comic-reader-prev-btn"
+                onClick={() => setActivePanelIndex(prev => Math.max(0, prev - 1))}
+                disabled={safePanelIndex === 0}
+                aria-label="Previous Page"
+                className={`z-20 w-10 h-10 sm:w-12 sm:h-12 border-3 border-black flex items-center justify-center shrink-0 transition-all ${
+                  safePanelIndex === 0
+                    ? 'opacity-30 bg-zinc-200 cursor-not-allowed border-zinc-400 text-zinc-400 shadow-none'
+                    : 'bg-[#FFE66D] text-black shadow-[3px_3px_0px_#0A0A0A] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#0A0A0A] active:translate-x-0 active:translate-y-0 active:shadow-none cursor-pointer'
+                }`}
+              >
+                <ChevronLeft size={24} strokeWidth={3} />
+              </button>
+
+              {/* Single Comic Page Card */}
+              <div
+                className="flex-1 h-full max-w-[680px] border-4 border-black bg-black shadow-[6px_6px_0px_#0A0A0A] flex flex-col overflow-hidden relative mx-auto"
+                style={{ background: '#0A0A0A' }}
+              >
+                {/* Comic Headline Bar */}
+                <div className="bg-[#FFE66D] border-b-3 border-black px-3.5 py-2 flex items-center justify-between gap-3 shrink-0 z-10 opacity-98">
+                  <span className="font-mono font-black text-xs bg-black text-[#FFE66D] px-2 py-0.5 tracking-wider uppercase shrink-0 border border-black shadow-[1px_1px_0px_rgba(0,0,0,0.3)]">
+                    PAGE {safePanelIndex + 1}
+                  </span>
+                  <h2
+                    className="font-['Bangers','Comic_Neue',cursive,sans-serif] text-sm sm:text-base md:text-lg text-black uppercase tracking-wide m-0 leading-tight flex-1 text-center font-normal"
+                    style={{ letterSpacing: '0.03em' }}
+                  >
+                    {activeCard.headline}
+                  </h2>
+                </div>
+
+                {/* Comic Artwork Viewport */}
+                <div className="relative flex-1 min-h-0 bg-black flex items-center justify-center overflow-hidden">
+                  {activeCard.imageUrl ? (
+                    <img
+                      src={activeCard.imageUrl}
+                      alt={activeCard.headline || `Comic Panel ${safePanelIndex + 1}`}
+                      className="w-full h-full object-contain select-none"
+                      style={{ background: '#0A0A0A' }}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 text-white p-4">
+                      {activeCard.imageLoading ? (
+                        <div className="flex flex-col items-center gap-3">
+                          <div className="w-10 h-10 border-4 border-white border-t-[#FFE66D] rounded-full animate-spin" />
+                          <span className="font-mono text-xs uppercase tracking-wider font-bold text-yellow-300">
+                            Painting Panel {safePanelIndex + 1}...
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center gap-2 text-center">
+                          <ImageOff size={32} className="text-red-400" />
+                          <span className="text-red-400 font-black text-xs uppercase">IMAGE FAILED TO RENDER</span>
+                          <span className="text-[10px] text-zinc-400 font-mono">{activeCard.imageError || 'NVIDIA FLUX failed'}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Speech Bubble Floating Overlay */}
+                  {activeCard.speechBubble && (
+                    <div
+                      className={`absolute top-4 z-20 max-w-[70%] sm:max-w-[55%] pointer-events-auto ${
+                        safePanelIndex % 2 === 1 ? 'left-3' : 'right-3'
+                      }`}
+                    >
+                      <SpeechBubble text={activeCard.speechBubble} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Comic Bottom Narration Box (High Legibility, Natural Casing, No Truncation) */}
+                {(activeCard.brief1 || activeCard.brief2) && (
+                  <div className="bg-[#FFFDF5] border-t-4 border-black px-4 py-3 z-10 shrink-0 max-h-[160px] overflow-y-auto">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="bg-[#FFE66D] text-black border-2 border-black text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 tracking-wider font-mono shadow-[1px_1px_0px_#0A0A0A]">
+                        NARRATIVE • PANEL {safePanelIndex + 1}
+                      </span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {activeCard.brief1 && (
+                        <p className="font-['Space_Grotesk',system-ui,sans-serif] font-bold text-xs sm:text-[14.5px] text-[#0A0A0A] leading-relaxed m-0">
+                          {activeCard.brief1}
+                        </p>
+                      )}
+                      {activeCard.brief2 && (
+                        <p className="font-['Space_Grotesk',system-ui,sans-serif] font-medium text-xs sm:text-[13.5px] text-zinc-800 leading-relaxed m-0 border-l-3 border-[#FFE66D] pl-2.5">
+                          {activeCard.brief2}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Next Button */}
+              <button
+                id="comic-reader-next-btn"
+                onClick={() => setActivePanelIndex(prev => Math.min(cards.length - 1, prev + 1))}
+                disabled={safePanelIndex === cards.length - 1}
+                aria-label="Next Page"
+                className={`z-20 w-10 h-10 sm:w-12 sm:h-12 border-3 border-black flex items-center justify-center shrink-0 transition-all ${
+                  safePanelIndex === cards.length - 1
+                    ? 'opacity-30 bg-zinc-200 cursor-not-allowed border-zinc-400 text-zinc-400 shadow-none'
+                    : 'bg-[#FFE66D] text-black shadow-[3px_3px_0px_#0A0A0A] hover:translate-x-[2px] hover:translate-y-[-2px] hover:shadow-[5px_5px_0px_#0A0A0A] active:translate-x-0 active:translate-y-0 active:shadow-none cursor-pointer'
+                }`}
+              >
+                <ChevronRight size={24} strokeWidth={3} />
+              </button>
+            </div>
+
+            {/* Thumbnail Scrubber Bar */}
+            <div className="bg-[#FFFBF0] border-t-3 border-black px-3 py-2 flex items-center justify-center gap-2 overflow-x-auto shrink-0">
+              {cards.map((c, idx) => {
+                const isActive = idx === safePanelIndex
+                return (
+                  <button
+                    key={idx}
+                    id={`thumb-panel-${idx}`}
+                    onClick={() => setActivePanelIndex(idx)}
+                    title={`Go to Panel ${idx + 1}`}
+                    className={`relative w-12 h-12 sm:w-14 sm:h-14 border-2 border-black overflow-hidden shrink-0 cursor-pointer transition-all ${
+                      isActive
+                        ? 'border-3 border-black ring-2 ring-[#DC2626] scale-105 shadow-[2px_2px_0px_#0A0A0A]'
+                        : 'opacity-65 hover:opacity-100 hover:scale-102'
+                    }`}
+                    style={{ background: '#0A0A0A' }}
+                  >
+                    {c.imageUrl ? (
+                      <img src={c.imageUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-white">
+                        P{idx + 1}
+                      </div>
+                    )}
+                    <span className="absolute bottom-0 right-0 bg-[#FFE66D] text-black text-[9px] font-black px-1 font-mono border-t border-l border-black">
+                      {idx + 1}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
         {/* ── GRID VIEW ── */}
         {viewMode === 'grid' && hasCards && (
           <div style={{ width: '100%', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflowY: 'auto', background: '#F0EBD8', padding: 16 }}>
@@ -390,17 +638,47 @@ export function PreviewPanel({
                   <img src="/comicGEN favicon.png" alt="Logo" style={{ width: '90%', height: '90%', objectFit: 'contain' }} />
                 </div>
                 <span style={{ fontFamily: 'var(--nb-font)', fontWeight: 900, fontSize: 15, color: '#0A0A0A', letterSpacing: '-0.3px' }}>
-                  ComicGEN • Special Issue
+                  ComicGEN • Grid Overview
                 </span>
               </div>
-              <span style={{
-                fontFamily: 'var(--nb-font)', fontWeight: 900, fontSize: 11,
-                background: '#FFE66D', color: '#0A0A0A',
-                border: '2px solid #0A0A0A',
-                borderRadius: 4, padding: '3px 10px',
-              }}>
-                {cards.length} PANELS
-              </span>
+
+              {/* View mode toggle */}
+              <div className="flex items-center gap-1.5 bg-black p-0.5 border-2 border-black">
+                <button
+                  id="grid-mode-single-btn"
+                  onClick={() => setViewMode('single')}
+                  className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all bg-black text-white hover:text-yellow-300 cursor-pointer"
+                >
+                  <BookOpen size={13} strokeWidth={2.5} />
+                  <span>Reader</span>
+                </button>
+                <button
+                  id="grid-mode-grid-btn"
+                  onClick={() => setViewMode('grid')}
+                  className="px-2.5 py-1 text-[11px] font-black uppercase tracking-wider flex items-center gap-1 transition-all bg-[#FFE66D] text-black shadow-[1px_1px_0px_#0A0A0A] cursor-pointer"
+                >
+                  <LayoutGrid size={13} strokeWidth={2.5} />
+                  <span>Grid</span>
+                </button>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span style={{
+                  fontFamily: 'var(--nb-font)', fontWeight: 900, fontSize: 11,
+                  background: '#FFE66D', color: '#0A0A0A',
+                  border: '2px solid #0A0A0A',
+                  borderRadius: 4, padding: '3px 10px',
+                }}>
+                  {cards.length} PANELS
+                </span>
+                <button
+                  onClick={() => onToggleExpand(!isExpanded)}
+                  title={isExpanded ? "Collapse View" : "Expand View"}
+                  className="p-1 border-2 border-black bg-white hover:bg-yellow-300 transition-colors cursor-pointer"
+                >
+                  {isExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+                </button>
+              </div>
             </div>
 
             {/* Dynamic Layout Engine */}
@@ -426,7 +704,7 @@ export function PreviewPanel({
                       key={idx}
                       className={`relative overflow-hidden border-4 border-black bg-black cursor-pointer group flex flex-col ${cls}`}
                       style={extraStyle}
-                      onClick={() => setActivePanelIndex(idx)}
+                      onClick={() => { setActivePanelIndex(idx); setViewMode('single'); }}
                     >
                       {/* Image — absolutely fills the entire panel cell */}
                       {card.imageUrl ? (
@@ -464,9 +742,11 @@ export function PreviewPanel({
                         </div>
                       )}
                       {/* Caption strip — compact bottom strip */}
-                      {card.brief1 && (
+                      {(card.brief1 || card.brief2) && (
                         <div className="absolute bottom-0 left-0 w-full z-10 bg-[#FFE66D] border-t-2 border-black px-2 py-0.5 opacity-95">
-                          <p className="font-bold text-[8px] sm:text-[9px] text-black line-clamp-2 leading-tight uppercase m-0" style={{ fontFamily: "'Comic Neue', cursive, sans-serif", fontWeight: 700 }}>{card.brief1}</p>
+                          <p className="font-bold text-[8px] sm:text-[9px] text-black line-clamp-2 leading-tight uppercase m-0" style={{ fontFamily: "'Comic Neue', cursive, sans-serif", fontWeight: 700 }}>
+                            {card.brief1} {card.brief2 ? `• ${card.brief2}` : ''}
+                          </p>
                         </div>
                       )}
                     </div>
@@ -721,7 +1001,7 @@ export function PreviewPanel({
         {/* Download Card Button */}
         <button
           id="nb-download-btn"
-          onClick={() => onDownload(activePanelIndex)}
+          onClick={() => onDownload(safePanelIndex)}
           disabled={!activeCard?.imageUrl}
           className={`bg-white text-black border-4 border-black px-6 py-2 uppercase font-black italic font-['Oswald'] tracking-wider inline-flex items-center justify-center rounded-none h-[44px] ${
             !activeCard?.imageUrl
@@ -731,7 +1011,7 @@ export function PreviewPanel({
           style={{ fontFamily: "'Oswald', sans-serif" }}
         >
           <Download className="w-4 h-4 mr-2 stroke-[3]" />
-          <span>DOWNLOAD CARD</span>
+          <span>DOWNLOAD PANEL {safePanelIndex + 1}</span>
         </button>
 
         {/* Share Button */}
